@@ -9,6 +9,8 @@
 **A personal fork of [illogical-impulse](https://github.com/end-4/dots-hyprland) by [@end-4](https://github.com/end-4)**  
 Customized and maintained by **pctrade**
 
+[English](README.md) | [简体中文](README.zh-CN.md) | [日本語](README.ja.md)
+
 </div>
 
 ---
