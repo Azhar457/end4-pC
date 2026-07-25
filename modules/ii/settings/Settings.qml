@@ -115,10 +115,10 @@ Scope {
                     cursorShape: Qt.SizeAllCursor
                     drag.target: settingsWindow
                     drag.axis: Drag.XAndYAxis
-                    drag.minimumX: 0
-                    drag.maximumX: settingsWindow.parent.width - settingsWindow.width
-                    drag.minimumY: 0
-                    drag.maximumY: settingsWindow.parent.height - settingsWindow.height
+                    onDoubleClicked: {
+                        settingsWindow.x = (settingsWindow.parent.width - settingsWindow.width) / 2;
+                        settingsWindow.y = (settingsWindow.parent.height - settingsWindow.height) / 2;
+                    }
                 }
             }
 
