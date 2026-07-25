@@ -68,10 +68,10 @@ Item {
             height: root.tileH
             font {
                 family: "Google Sans Flex"
-                weight: 1200
+                weight: 1000
                 bold: true
                 pixelSize: root.glyphSize
-                variableAxes: ({ "wght": 1200 })
+                variableAxes: ({ "wght": 1000 })
             }
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
