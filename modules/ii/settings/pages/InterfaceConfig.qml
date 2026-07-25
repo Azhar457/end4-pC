@@ -647,7 +647,7 @@ ContentPage {
 
                 ConfigSwitch {
                     buttonIcon: "search"
-                    text: Translation.tr('Show search bar')
+                    text: Translation.tr('Always show search bar')
                     checked: Config.options.wallpaperSelector.showSearchbar
                     onCheckedChanged: {
                         Config.options.wallpaperSelector.showSearchbar = checked;
