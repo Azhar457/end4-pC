@@ -657,7 +657,7 @@ ContentPage {
                     id: userPathField
                     Layout.fillWidth: true
                     buttonIcon: "folder"
-                    text: Translation.tr("Wallpaper Folder")
+                    text: Translation.tr("Custom Wallpaper Folder")
                     placeholderText: Translation.tr("e.g., /home/user/Pictures")
                     fieldWidth: 300
                     value: Config.options.wallpaperSelector.userPath ?? ""
