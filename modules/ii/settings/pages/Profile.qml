@@ -294,7 +294,11 @@ ContentPage {
                             onLoaded: {
                                 try {
                                     const data = JSON.parse(text())
-                                    presetDelegate.presetWallpaper = data?.background?.wallpaperPath ?? ""
+                                    const rawWallpaper = data?.background?.wallpaperPath ?? ""
+                                    const isVideo = /\.(mp4|webm|mkv|avi|mov)$/i.test(rawWallpaper)
+                                    presetDelegate.presetWallpaper = isVideo
+                                        ? (data?.background?.thumbnailPath ?? "")
+                                        : rawWallpaper
                                     presetDelegate.presetDescription = data?._presetMeta?.description ?? ""
                                 } catch (e) {
                                     console.log("Failed to parse preset:", e)
