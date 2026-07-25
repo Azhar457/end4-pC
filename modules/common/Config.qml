@@ -553,6 +553,7 @@ Singleton {
 
             property JsonObject notifications: JsonObject {
                 property int timeout: 7000
+                property string position: "top_right"
             }
 
             property JsonObject osd: JsonObject {
