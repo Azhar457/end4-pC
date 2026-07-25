@@ -255,6 +255,9 @@ Singleton {
                                 property real roundness: 0
                             }
                         }
+                        property JsonObject pixel: JsonObject {
+                            property string orientation: "vertical"
+                        }
                         property JsonObject quote: JsonObject {
                             property bool enable: false
                             property string text: ""
