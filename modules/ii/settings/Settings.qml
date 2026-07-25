@@ -45,6 +45,7 @@ Scope {
         onVisibleChanged: {
             if (visible) {
                 GlobalFocusGrab.addDismissable(panelWindow);
+                settingsWindow.userMoved = false;
             } else {
                 GlobalFocusGrab.removeDismissable(panelWindow);
             }
@@ -82,8 +83,8 @@ Scope {
             radius: Appearance.rounding.screenRounding - Appearance.sizes.hyprlandGapsOut + 5
             z: 1
 
-            x: (parent.width - width) / 2
-            y: (parent.height - height) / 2
+            property bool userMoved: false
+            anchors.centerIn: userMoved ? undefined : parent
 
             opacity: GlobalStates.settingsOpen ? 1 : 0
             scale: GlobalStates.settingsOpen ? 1 : 0.95
@@ -100,7 +101,7 @@ Scope {
                     panelWindow.hide();
                 }
             }
-            
+
             Rectangle {
                 id: dragHandle
                 anchors.top: parent.top
@@ -115,10 +116,8 @@ Scope {
                     cursorShape: Qt.SizeAllCursor
                     drag.target: settingsWindow
                     drag.axis: Drag.XAndYAxis
-                    onDoubleClicked: {
-                        settingsWindow.x = (settingsWindow.parent.width - settingsWindow.width) / 2;
-                        settingsWindow.y = (settingsWindow.parent.height - settingsWindow.height) / 2;
-                    }
+                    onPressed: settingsWindow.userMoved = true
+                    onDoubleClicked: settingsWindow.userMoved = false
                 }
             }
 
