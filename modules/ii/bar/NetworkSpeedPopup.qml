@@ -72,7 +72,7 @@ StyledPopup {
         implicitWidth: 145
         implicitHeight: cardContent.implicitHeight + 20
         radius: Appearance.rounding.small
-        color: Appearance.colors.colSurfaceContainerHigh
+        color: Appearance.colors.colSurfaceContainerLow
 
         ColumnLayout {
             id: cardContent
@@ -121,7 +121,7 @@ StyledPopup {
 
     ColumnLayout {
         implicitWidth: 300
-        spacing: 10
+        spacing: 6
 
         RowLayout {
             Layout.fillWidth: true
@@ -181,66 +181,54 @@ StyledPopup {
             }
         }
 
-        Rectangle {
-            readonly property bool hasDetails: Network.networkInterface !== ""
+        GroupedList {
+            visible: Network.networkInterface !== ""
                 || Network.ipAddress !== ""
                 || Network.publicIpAddress !== ""
                 || Network.gateway !== ""
                 || Network.macAddress !== ""
 
-            visible: hasDetails
             Layout.fillWidth: true
-            implicitHeight: visible ? detailsColumn.implicitHeight + 20 : 0
-            radius: Appearance.rounding.small
-            color: Appearance.colors.colSurfaceContainerHigh
+            bgcolor: Appearance.colors.colSurfaceContainerLow
 
-            ColumnLayout {
-                id: detailsColumn
-                anchors {
-                    fill: parent
-                    margins: 10
-                }
-                spacing: 4
+            StyledPopupValueRow {
+                Layout.fillWidth: true
+                visible: Network.networkInterface !== ""
+                icon: "settings_ethernet"
+                label: Translation.tr("Interface")
+                value: Network.networkInterface
+            }
 
-                StyledPopupValueRow {
-                    Layout.fillWidth: true
-                    visible: Network.networkInterface !== ""
-                    icon: "settings_ethernet"
-                    label: Translation.tr("Interface")
-                    value: Network.networkInterface
-                }
+            StyledPopupValueRow {
+                Layout.fillWidth: true
+                visible: Network.ipAddress !== ""
+                icon: "lan"
+                label: Translation.tr("Local IP")
+                value: Network.ipAddress
+            }
 
-                StyledPopupValueRow {
-                    Layout.fillWidth: true
-                    visible: Network.ipAddress !== ""
-                    icon: "lan"
-                    label: Translation.tr("Local IP")
-                    value: Network.ipAddress
-                }
+            StyledPopupValueRow {
+                Layout.fillWidth: true
+                visible: Network.publicIpAddress !== ""
+                icon: "public"
+                label: Translation.tr("Public IP")
+                value: Network.publicIpAddress
+            }
 
-                StyledPopupValueRow {
-                    Layout.fillWidth: true
-                    visible: Network.publicIpAddress !== ""
-                    icon: "public"
-                    label: Translation.tr("Public IP")
-                    value: Network.publicIpAddress
-                }
+            StyledPopupValueRow {
+                Layout.fillWidth: true
+                visible: Network.gateway !== ""
+                icon: "router"
+                label: Translation.tr("Gateway")
+                value: Network.gateway
+            }
 
-                StyledPopupValueRow {
-                    Layout.fillWidth: true
-                    visible: Network.gateway !== ""
-                    icon: "router"
-                    label: Translation.tr("Gateway")
-                    value: Network.gateway
-                }
-
-                StyledPopupValueRow {
-                    Layout.fillWidth: true
-                    visible: Network.macAddress !== ""
-                    icon: "fingerprint"
-                    label: Translation.tr("MAC address")
-                    value: Network.macAddress
-                }
+            StyledPopupValueRow {
+                Layout.fillWidth: true
+                visible: Network.macAddress !== ""
+                icon: "fingerprint"
+                label: Translation.tr("MAC address")
+                value: Network.macAddress
             }
         }
     }
