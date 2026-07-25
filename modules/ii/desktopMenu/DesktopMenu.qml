@@ -281,7 +281,10 @@ Scope {
                             }
                             onClicked: {
                                 GlobalStates.desktopMenuOpen = false
-                                Wallpapers.openFallbackPicker(Appearance.m3colors.darkmode)
+                                Wallpapers.openFallbackPicker(
+                                    Appearance.m3colors.darkmode,
+                                    Config.options.wallpaperSelector.liveWallpapersPath ?? ""
+                                )
                             }
                         }
 

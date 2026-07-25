@@ -674,6 +674,28 @@ ContentPage {
                             Config.options.wallpaperSelector.userPath = userPathField.value
                         }
                     }
+                }
+                ConfigTextArea {
+                    id: liveWallpapersPathField
+                    Layout.fillWidth: true
+                    buttonIcon: "video_template"
+                    text: Translation.tr("Live Wallpaper Folder")
+                    placeholderText: Translation.tr("e.g., /home/user/Videos/Wallpapers")
+                    fieldWidth: 300
+                    value: Config.options.wallpaperSelector.liveWallpapersPath ?? ""
+
+                    onValueChanged: {
+                        liveWallpapersPathDebounceTimer.restart()
+                    }
+
+                    Timer {
+                        id: liveWallpapersPathDebounceTimer
+                        interval: 1000
+                        running: false
+                        onTriggered: {
+                            Config.options.wallpaperSelector.liveWallpapersPath = liveWallpapersPathField.value
+                        }
+                    }
                 } 
             }
         }
