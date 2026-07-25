@@ -74,7 +74,6 @@ Scope {
 
         Rectangle {
             id: settingsWindow
-            anchors.centerIn: parent
             width: Math.min(parent.width - 80, 980)
             height: Math.min(parent.height - 80, 665)
             color: Appearance.colors.colLayer0
@@ -82,6 +81,9 @@ Scope {
             border.color: Appearance.colors.colLayer0Border
             radius: Appearance.rounding.screenRounding - Appearance.sizes.hyprlandGapsOut + 5
             z: 1
+
+            x: (parent.width - width) / 2
+            y: (parent.height - height) / 2
 
             opacity: GlobalStates.settingsOpen ? 1 : 0
             scale: GlobalStates.settingsOpen ? 1 : 0.95
@@ -96,6 +98,27 @@ Scope {
             Keys.onPressed: (event) => {
                 if (event.key === Qt.Key_Escape) {
                     panelWindow.hide();
+                }
+            }
+            
+            Rectangle {
+                id: dragHandle
+                anchors.top: parent.top
+                anchors.left: parent.left
+                anchors.right: parent.right
+                height: 32
+                color: "transparent"
+                z: 2
+
+                MouseArea {
+                    anchors.fill: parent
+                    cursorShape: Qt.SizeAllCursor
+                    drag.target: settingsWindow
+                    drag.axis: Drag.XAndYAxis
+                    drag.minimumX: 0
+                    drag.maximumX: settingsWindow.parent.width - settingsWindow.width
+                    drag.minimumY: 0
+                    drag.maximumY: settingsWindow.parent.height - settingsWindow.height
                 }
             }
 
