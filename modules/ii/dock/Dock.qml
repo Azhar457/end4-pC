@@ -152,6 +152,8 @@ Scope {
 
                             DockSeparator {
                                 visible: Config.options.dock.showPinButton
+                                    && (dockRow.hasPinnedApps
+                                        || !(Config.options.dock.showMedia && dockMedia.hasTrack))
                             }
 
                             DragApps {
