@@ -66,6 +66,10 @@ MouseArea {
                     GlobalStates.wallpaperSelectorOpen = false;
                 });
             } else {
+                // Stop preview FIRST so wallpaperPath reverts to the old wallpaper,
+                // then select() sets confirmedPath to the new one — this causes
+                // onWallpaperPathChanged to fire with the real transition animation.
+                Wallpapers.stopPreview();
                 Wallpapers.select(filePath, root.useDarkMode);
             }
         }
@@ -82,6 +86,7 @@ MouseArea {
 
     Keys.onPressed: event => {
         if (event.key === Qt.Key_Escape) {
+            Wallpapers.stopPreview();
             GlobalStates.wallpaperSelectorOpen = false;
             event.accepted = true;
         } else if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_V) {
@@ -517,7 +522,10 @@ MouseArea {
 
                         ToolbarPairedFab {
                             iconText: "close"
-                            onClicked: GlobalStates.wallpaperSelectorOpen = false
+                            onClicked: {
+                                Wallpapers.stopPreview();
+                                GlobalStates.wallpaperSelectorOpen = false;
+                            }
                         }
                     }
                 }
@@ -533,6 +541,8 @@ MouseArea {
                     filterField.forceActiveFocus()
                 else
                     root.forceActiveFocus()
+            } else if (!GlobalStates.wallpaperSelectorOpen) {
+                Wallpapers.stopPreview();
             }
         }
     }
@@ -540,8 +550,7 @@ MouseArea {
     Connections {
         target: Wallpapers
         function onChanged() {
-            if (Config.options.wallpaperSelector.closeAfterSelection)
-                GlobalStates.wallpaperSelectorOpen = false;
+            GlobalStates.wallpaperSelectorOpen = false;
         }
     }
 }

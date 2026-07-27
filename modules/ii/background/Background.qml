@@ -109,9 +109,11 @@ Variants {
 
         property HyprlandMonitor monitor: Hyprland.monitorFor(modelData)
 
-        property string effectiveWallpaperPath: (GlobalStates.screenLocked && Config.options.background.lockWall !== "")
-            ? Config.options.background.lockWall
-            : Config.options.background.wallpaperPath
+        property string effectiveWallpaperPath: {
+            if (GlobalStates.screenLocked && Config.options.background.lockWall !== "")
+                return Config.options.background.lockWall;
+            return Wallpapers.previewPath || Wallpapers.confirmedPath || Config.options.background.wallpaperPath;
+        }
 
         property bool wallpaperIsVideo: bgRoot.effectiveWallpaperPath.endsWith(".mp4") || bgRoot.effectiveWallpaperPath.endsWith(".webm") || bgRoot.effectiveWallpaperPath.endsWith(".mkv") || bgRoot.effectiveWallpaperPath.endsWith(".avi") || bgRoot.effectiveWallpaperPath.endsWith(".mov")
         property string wallpaperPath: wallpaperIsVideo ? Config.options.background.thumbnailPath : bgRoot.effectiveWallpaperPath
