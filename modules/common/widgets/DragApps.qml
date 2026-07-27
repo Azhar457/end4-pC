@@ -124,8 +124,8 @@ Item {
 
                 property var appToplevel: slotItem.appEntry
 
-                topInset:    Appearance.sizes.hyprlandGapsOut + root.buttonPadding
-                bottomInset: Appearance.sizes.hyprlandGapsOut + root.buttonPadding
+                topInset:    Appearance.sizes.hyprlandGapsOut + 8
+                bottomInset: Appearance.sizes.hyprlandGapsOut + 6
 
                 implicitWidth: implicitHeight - topInset - bottomInset
 
