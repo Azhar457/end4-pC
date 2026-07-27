@@ -121,6 +121,7 @@ Scope {
                             anchors.horizontalCenter: parent.horizontalCenter
                             spacing: 3
                             property real padding: 5
+                            property bool hasPinnedApps: (Config.options?.dock.pinnedApps?.length ?? 0) > 0
 
                             VerticalButtonGroup {
                                 Layout.topMargin: 3
@@ -151,10 +152,13 @@ Scope {
 
                             DockSeparator {
                                 visible: Config.options.dock.showPinButton
+                                    && (dockRow.hasPinnedApps
+                                        || !(Config.options.dock.showMedia && dockMedia.hasTrack))
                             }
 
                             DragApps {
                                 id: dragSlots
+                                visible: dockRow.hasPinnedApps
                                 Layout.fillHeight: true
                                 Layout.topMargin: 0
                                 Layout.leftMargin: Config.options.dock.showPinButton ? 0 : -15
@@ -166,7 +170,7 @@ Scope {
                             }
 
                             DockSeparator {
-                                visible: activeAppsArea.activeUnpinned.length > 0 || (Config.options.dock.showMedia && MprisController.activePlayer !== null)
+                                visible: dockRow.hasPinnedApps && (activeAppsArea.activeUnpinned.length > 0 || (Config.options.dock.showMedia && MprisController.activePlayer !== null))
                             }
 
                             Item {
