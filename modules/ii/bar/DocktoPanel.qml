@@ -349,7 +349,7 @@ Item {
                                     }
                                     ColorOverlay {
                                         anchors.fill: desat; source: desat
-                                        color: ColorUtils.transparentize(Appearance.colors.colPrimary, Config.options.appearance.iconTintPercentage)
+                                        color: ColorUtils.transparentize(Appearance.colors.colPrimary, 0.8)
                                     }
                                 }
                             }
@@ -454,7 +454,7 @@ Item {
                                     }
                                     ColorOverlay {
                                         anchors.fill: desat2; source: desat2
-                                        color: ColorUtils.transparentize(Appearance.colors.colPrimary, Config.options.appearance.iconTintPercentage)
+                                        color: ColorUtils.transparentize(Appearance.colors.colPrimary, 0.8)
                                     }
                                 }
                             }
