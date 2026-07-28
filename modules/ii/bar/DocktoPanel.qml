@@ -17,7 +17,7 @@ Item {
 
     property real iconSize:      23
     property real btnSize:       28
-    property real btnSpacing:    4
+    property real btnSpacing:    3
     property bool vertical:    Config.options.bar.vertical
     property bool isMaterial:  Config.options.bar.cornerStyle === 3
     property var pinnedApps: Config.options?.dock.pinnedApps ?? []
