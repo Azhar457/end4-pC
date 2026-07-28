@@ -362,6 +362,7 @@ ContentPage {
                 }
                 ConfigSpinBox {
                     icon: "width"
+                    enabled: Config.options.bar.divider.style === "space"
                     text: Translation.tr("Space width (px)")
                     value: Config.options.bar.divider.spacing
                     from: 4
