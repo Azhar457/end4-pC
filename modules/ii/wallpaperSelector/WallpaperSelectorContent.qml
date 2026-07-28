@@ -551,7 +551,8 @@ MouseArea {
     Connections {
         target: Wallpapers
         function onChanged() {
-            GlobalStates.wallpaperSelectorOpen = false;
+            if (Config.options.wallpaperSelector.closeAfterSelection)
+                GlobalStates.wallpaperSelectorOpen = false;
         }
     }
 }
