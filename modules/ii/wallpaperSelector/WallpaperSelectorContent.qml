@@ -69,7 +69,8 @@ MouseArea {
                 // Stop preview FIRST so wallpaperPath reverts to the old wallpaper,
                 // then select() sets confirmedPath to the new one — this causes
                 // onWallpaperPathChanged to fire with the real transition animation.
-                Wallpapers.stopPreview();
+                if (Config.options.background.enableWallpaperPreview)
+                    Wallpapers.stopPreview();
                 Wallpapers.select(filePath, root.useDarkMode);
             }
         }

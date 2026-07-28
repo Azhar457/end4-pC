@@ -193,6 +193,15 @@ ContentPage {
                         Config.options.background.wallpaperAnimation = newValue;
                     }
                 }
+
+                ConfigSwitch {
+                    buttonIcon: "preview"
+                    text: Translation.tr("Preview wallpaper")
+                    checked: Config.options.background.enableWallpaperPreview
+                    onCheckedChanged: {
+                        Config.options.background.enableWallpaperPreview = checked;
+                    }
+                }
             }
 
             Connections {

@@ -135,7 +135,7 @@ Item {
             positionViewAtIndex(currentIndex, GridView.Contain);
             const filePath = grid.model.get(currentIndex, "filePath");
             const isDir = grid.model.get(currentIndex, "fileIsDir");
-            if (!isDir && filePath) Wallpapers.startPreview(filePath);
+            if (!isDir && filePath && Config.options.background.enableWallpaperPreview) Wallpapers.startPreview(filePath);
         }
 
         function activateCurrent() {
@@ -181,7 +181,7 @@ Item {
             onEntered: grid.currentIndex = index
             onPreviewRequested: {
                 grid.currentIndex = index;
-                if (!fileModelData.fileIsDir) Wallpapers.startPreview(fileModelData.filePath);
+                if (!fileModelData.fileIsDir && Config.options.background.enableWallpaperPreview) Wallpapers.startPreview(fileModelData.filePath);
             }
             onActivated: root.wallpaperSelected(fileModelData.filePath)
         }
