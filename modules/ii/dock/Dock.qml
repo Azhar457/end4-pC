@@ -161,7 +161,7 @@ Scope {
                                 visible: dockRow.hasPinnedApps
                                 Layout.fillHeight: false
                                 Layout.topMargin: 2
-                                Layout.leftMargin: Config.options.dock.showPinButton ? 0 : -15
+                                Layout.leftMargin: Config.options.dock.showPinButton ? 0 : -18
                                 pinnedApps:    Config.options?.dock.pinnedApps ?? []
                                 buttonPadding: dockRow.padding
                                 btnSize:       46
@@ -197,6 +197,7 @@ Scope {
                                 RowLayout {
                                     id: activeRow
                                     anchors.fill: parent
+                                    Layout.rightMargin: 10
                                     spacing: -4
 
                                     DockMedia {
@@ -216,11 +217,9 @@ Scope {
                                             appToplevel: modelData
                                             Layout.fillHeight: true
                                             Layout.topMargin: 2
-                                            Layout.rightMargin: Config.options.dock.showAppsButton ? 0 : 4
-                                            Layout.leftMargin: dockMedia.visible ? 4 : 0
                                             appListRoot: appListBridge
                                             topInset:    dockRow.padding + 8
-                                            bottomInset: dockRow.padding + 4
+                                            bottomInset: dockRow.padding + 8
                                         }
                                     }
                                 }
@@ -242,8 +241,8 @@ Scope {
                                 Layout.topMargin: 0
                                 visible: Config.options.dock.showAppsButton
                                 onClicked: GlobalStates.overviewOpen = !GlobalStates.overviewOpen
-                                topInset:    dockRow.padding
-                                bottomInset: Appearance.sizes.hyprlandGapsOut + dockRow.padding
+                                topInset:    dockRow.padding + 10
+                                bottomInset: dockRow.padding + 7
                                 contentItem: MaterialSymbol {
                                     anchors.fill: parent
                                     horizontalAlignment: Text.AlignHCenter
