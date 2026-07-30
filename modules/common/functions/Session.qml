@@ -30,7 +30,11 @@ Singleton {
 
     function logout() {
         closeAllWindows();
-        Quickshell.execDetached(["pkill", "-i", "Hyprland"]);
+        if (WM.compositor === "niri") {
+            Quickshell.execDetached(["niri", "msg", "action", "quit"]);
+        } else {
+            Quickshell.execDetached(["pkill", "-i", "Hyprland"]);
+        }
     }
 
     function launchTaskManager() {
