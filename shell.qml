@@ -43,6 +43,10 @@ ShellRoot {
         Wallpapers.load()
         Updates.load()
         LyricsService.restartLyrics()
+
+        if (WM.compositor === "niri") {
+            Config.options.background.lockWall = ""
+        }
     }
     
     PanelFamilyLoader {
