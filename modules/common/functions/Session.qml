@@ -17,7 +17,11 @@ Singleton {
     }
 
     function lock() {
-        Quickshell.execDetached(["loginctl", "lock-session"]);
+        if (WM.compositor === "niri") {
+            Quickshell.execDetached(["qs", "-c", "end4-pC", "ipc", "call", "lock", "activate"]);
+        } else {
+            Quickshell.execDetached(["loginctl", "lock-session"]);
+        }
     }
 
     function suspend() {

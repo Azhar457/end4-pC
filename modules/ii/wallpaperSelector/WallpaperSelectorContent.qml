@@ -151,6 +151,7 @@ MouseArea {
     StyledRectangularShadow {
         target: wallpaperGridBackground
     }
+
     Rectangle {
         id: wallpaperGridBackground
         anchors {
