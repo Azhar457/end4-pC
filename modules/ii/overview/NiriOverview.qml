@@ -25,7 +25,7 @@ Item {
         return Math.max(1, Math.min(100, id))
     }
 
-    readonly property int maxWorkspaces: Config.options.bar.workspaces.shown ?? 10
+    readonly property int maxWorkspaces: Math.max(20, Config.options?.bar?.workspaces?.shown ?? 10)
     readonly property real wsHeight: (screen?.height ?? 1080) * Config.options.overview.scale
     readonly property real wsPadding: 28
     readonly property real scale: Config.options.overview.scale
