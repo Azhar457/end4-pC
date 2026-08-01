@@ -7,7 +7,7 @@ import QtQuick.Layouts
 BarWidgetSwitcher {
     id: root
     property bool borderless: Config.options.bar.borderless
-    property bool showDate: Config.options.bar.verbose
+    property bool showDate: Config.options.time.showDate
     property var today: new Date()
     readonly property string dateTimeString: DateTime.time
     readonly property bool hasAmPm: dateTimeString.toLowerCase().includes("am") || dateTimeString.toLowerCase().includes("pm")

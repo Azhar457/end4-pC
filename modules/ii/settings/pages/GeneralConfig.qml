@@ -152,6 +152,14 @@ ContentPage {
                         Config.options.time.secondPrecision = checked;
                     }
                 }
+                ConfigSwitch {
+                    buttonIcon: "date_range"
+                    text: Translation.tr("Show date")
+                    checked: Config.options.time.showDate
+                    onCheckedChanged: {
+                        Config.options.time.showDate = checked;
+                    }
+                }
                 ConfigTextArea {
                     Layout.fillWidth: true
                     buttonIcon: "scoreboard"
