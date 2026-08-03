@@ -7,15 +7,6 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Hyprland
 
-/**
- * Night light service with dual backend:
- * - Hyprland: hyprsunset controlled via hyprctl
- * - Niri: wlsunset (kill + relaunch with fixed day==night temp)
- *
- * Automatic scheduling is opt-in going forward only: on startup we merely
- * SYNC with whatever is actually running (fetchState), we never force-enable
- * just because the clock happens to fall in the night window at load time.
- */
 Singleton {
     id: root
     signal gammaChangeAttempt()
@@ -72,7 +63,6 @@ Singleton {
 
         if (firstEvaluation) {
             firstEvaluation = false;
-            root.fetchState();
             return;
         }
         root.ensureState();
@@ -99,8 +89,12 @@ Singleton {
     }
 
     function load() {
-        root.startHyprsunset();
-        root.fetchState();
+        if (root.isNiri) {
+            root.disableTemperature();
+            return;
+        }
+        Quickshell.execDetached(["bash", "-c", `pidof hyprsunset || hyprsunset & disown; sleep 0.3; hyprctl hyprsunset identity`]);
+        root.temperatureActive = false;
     }
 
     function enableTemperature() {
@@ -154,7 +148,7 @@ Singleton {
 
     Process {
         id: fetchProc
-        running: !root.isNiri
+        running: false
         command: ["bash", "-c", "hyprctl hyprsunset temperature"]
         stdout: StdioCollector {
             id: stateCollector
@@ -170,7 +164,7 @@ Singleton {
 
     Process {
         id: niriFetchProc
-        running: root.isNiri
+        running: false
         command: ["bash", "-c", "pgrep -x wlsunset"]
         stdout: StdioCollector {
             id: niriStateCollector
@@ -195,7 +189,6 @@ Singleton {
         }
     }
 
-    // Change temp
     Connections {
         target: Config.options.light.night
         function onColorTemperatureChanged() {
