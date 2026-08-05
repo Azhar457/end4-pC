@@ -96,6 +96,10 @@ hl.bind("SUPER + escape", hl.dsp.global("quickshell:settingsToggle"), {descripti
 
 Open the launcher (`SUPER`) and type `<` — it'll show you the full list of configured keybinds.
 
+### Why doesn't Settings have a search bar?
+
+It doesn't need one — the launcher already does that job. Open the launcher (`SUPER`) and just type what you're looking for (e.g. `wallpaper`, `bar`, `blur`); it'll match against page names and section keywords and jump you straight to the right Settings page, so there's no need for a separate search inside Settings itself.
+
 ---
 
 ## 🙏 Credits
