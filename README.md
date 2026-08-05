@@ -88,6 +88,16 @@ hl.bind("SUPER + escape", hl.dsp.global("quickshell:settingsToggle"), {descripti
 
 > **Note:** Settings is an overlay panel, not a regular window — `Super + Q` won't close it. Use the same keybind to toggle it or press `Escape`.
 
+---
+
+## ❓ FAQ
+
+### How do I see my keybinds?
+
+Open the launcher (`SUPER`) and type `<` — it'll show you the full list of configured keybinds.
+
+---
+
 ## 🙏 Credits
 
 Huge thanks to the people who made this possible:
