@@ -366,7 +366,7 @@ ContentPage {
                     text: Translation.tr("Space width (px)")
                     value: Config.options.bar.divider.spacing
                     from: 4
-                    to: 100
+                    to: 400
                     stepSize: 2
                     onValueChanged: {
                         Config.options.bar.divider.spacing = value;
