@@ -130,7 +130,7 @@ Scope {
 
                     RoundCorner {
                         id: leftPillCorner
-                        visible: barContent.centerOnly && showBarBackground && Config.options.bar.cornerStyle === 0 && !Config.options.bar.autoHide.enable
+                        visible: barContent.centerOnly && showBarBackground && Config.options.bar.cornerStyle === 0 && (!Config.options.bar.autoHide.enable || barRoot.mustShow)
                         x: barContent.centerPillX - implicitSize
                         implicitSize: Appearance.rounding.screenRounding
                         color: Appearance.colors.colLayer0
@@ -198,7 +198,7 @@ Scope {
 
                     RoundCorner {
                         id: rightPillCorner
-                        visible: barContent.centerOnly && showBarBackground && Config.options.bar.cornerStyle === 0 && !Config.options.bar.autoHide.enable
+                        visible: barContent.centerOnly && showBarBackground && Config.options.bar.cornerStyle === 0 && (!Config.options.bar.autoHide.enable || barRoot.mustShow)
                         x: barContent.centerPillX + barContent.centerPillWidth
                         implicitSize: Appearance.rounding.screenRounding
                         color: Appearance.colors.colLayer0
