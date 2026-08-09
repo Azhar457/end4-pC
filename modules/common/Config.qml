@@ -590,7 +590,7 @@ Singleton {
             }
 
             property JsonObject overview: JsonObject {
-                property bool enable: false
+                property bool enable: true
                 property string style: "default"
                 property real scale: 0.18 // Relative to screen size
                 property real rows: 2
