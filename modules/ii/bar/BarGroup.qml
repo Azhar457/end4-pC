@@ -47,7 +47,7 @@ Item {
                 ? root.bgColor
                 : (Config.options?.bar.borderless === "transparent"
                     ? "transparent"
-                    : Config.options.bar.cornerStyle === 2
+                    : Config.options.bar.cornerStyle === 2 || (Config.options?.bar.borderless === "segmented" && !Config.options.bar.showBackground)
                         ? Appearance.colors.colLayer0
                         : Appearance.colors.colLayer1)
 
