@@ -239,7 +239,8 @@ ContentPage {
                     options: [
                         { displayName: Translation.tr(""),          icon: "block",          value: "transparent" },
                         { displayName: Translation.tr("Pills"),     icon: "pill",           value: "pills" },
-                        { displayName: Translation.tr("Separated"), icon: "view_column_2",  value: "separated" }
+                        { displayName: Translation.tr("Separated"), icon: "view_column_2",  value: "separated" },
+                        { displayName: Translation.tr("Segmented"), icon: "tablet",           value: "segmented" },
                     ]
                 }
                 ConfigRow{
