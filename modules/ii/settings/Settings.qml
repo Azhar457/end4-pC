@@ -17,6 +17,9 @@ import qs.modules.common.functions as CF
 Scope {
     id: root
 
+    readonly property real sizeScale: Config.options.settings.style === "minimal" ? 0.75 : 1.0
+    property bool isMinimal: Config.options.settings.style === "minimal"
+
     Component.onCompleted: {
         GlobalStates.settingsOpen = false;
     }
@@ -75,12 +78,12 @@ Scope {
 
         Rectangle {
             id: settingsWindow
-            width: Math.min(parent.width - 80, 980)
-            height: Math.min(parent.height - 80, 665)
+            width: Config.options.settings.style === "minimal" ? Math.min(parent.width - 70, 980 * sizeScale) : Math.min(parent.width - 80, 980 * sizeScale)
+            height: Math.min(parent.height - 80, 665 * sizeScale)
             color: Appearance.colors.colLayer0
-            border.width: 1
-            border.color: Appearance.colors.colLayer0Border
-            radius: Appearance.rounding.screenRounding - Appearance.sizes.hyprlandGapsOut + 5
+            border.width: Config.options.settings.borderSize
+            border.color: Appearance.getColorFromName(Config.options.settings.borderColor)
+            radius: !isMinimal ? Appearance.rounding.screenRounding - Appearance.sizes.hyprlandGapsOut + 5 : Appearance.rounding.screenRounding + 5
             z: 1
 
             property bool userMoved: false

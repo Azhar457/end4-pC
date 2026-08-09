@@ -40,6 +40,42 @@ ContentPage {
         spacing: 20
 
         ContentSection {
+            icon: "settings"
+            shape: MaterialShape.Shape.SoftBurst
+            title: Translation.tr("Settings Panel")
+            GroupedList {
+                ConfigSelectionArray {
+                    text: Translation.tr("Style")
+                    icon: "style"
+                    currentValue: Config.options.settings.style
+                    onSelected: newValue => { Config.options.settings.style = newValue }
+                    options: [
+                        { displayName: Translation.tr("Default"), icon: "settings_panorama", value: "default" },
+                        { displayName: Translation.tr("Minimal"), icon: "settings_heart", value: "minimal" }
+                    ]
+                }
+                ConfigSpinBox {
+                    icon: "border_style"
+                    text: Translation.tr("Border width")
+                    value: Config.options.settings.borderSize
+                    from: 0
+                    to: 10
+                    stepSize: 1
+                    onValueChanged: { Config.options.settings.borderSize = value }
+                }
+                ColorSelectionArray {
+                    icon: "format_paint"
+                    text: Translation.tr("Border Color")
+                    options: ["primary", "secondary", "tertiary", "primaryContainer", "secondaryContainer", "tertiaryContainer", "layer0Border"]
+                    currentValue: Config.options.settings.borderColor 
+                    onSelected: newValue => {
+                        Config.options.settings.borderColor = newValue
+                    }
+                }
+            } 
+        }
+
+        ContentSection {
             icon: "splitscreen_left"
             shape: MaterialShape.Shape.Clover4Leaf
             title: Translation.tr("Left Sidebar")

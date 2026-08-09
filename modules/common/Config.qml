@@ -213,6 +213,12 @@ Singleton {
                 property string volumeMixer: `~/.config/hypr/hyprland/scripts/launch_first_available.sh "pavucontrol-qt" "pavucontrol"`
             }
 
+            property JsonObject settings: JsonObject {
+                property string style: "default" // default - minimal
+                property real borderSize: 1
+                property string borderColor: "layer0Border"
+            }
+
             property JsonObject background: JsonObject {
                 property string lockWall: ""
                 property bool widgetsLocked: false

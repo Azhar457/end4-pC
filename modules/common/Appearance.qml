@@ -15,6 +15,21 @@ Singleton {
     property QtObject sizes
     property string syntaxHighlightingTheme
 
+    function getColorFromName(name) {
+        switch (name) {
+            case "primary":            return colors.colPrimary
+            case "secondary":          return colors.colSecondary
+            case "tertiary":           return colors.colTertiary
+            case "primaryContainer":   return colors.colPrimaryContainer
+            case "secondaryContainer": return colors.colSecondaryContainer
+            case "tertiaryContainer":  return colors.colTertiaryContainer
+            case "layer0":             return colors.colLayer0
+            case "layer0Border":       return colors.colLayer0Border
+            case "layer1":             return colors.colLayer1
+            default:                   return colors.colPrimaryContainer
+        }
+    }
+
     // Transparency. The quadratic functions were derived from analysis of hand-picked transparency values.
     ColorQuantizer {
         id: wallColorQuant
