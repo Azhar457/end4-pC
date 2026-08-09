@@ -75,6 +75,7 @@ Scope {
 
         margins {
             top: {
+                if (Config?.options.bar.autoHide.enable) return 0;
                 if (!centerOnly) return 0;
                 switch (Config.options.bar.cornerStyle) {
                 case 0: return -Appearance.sizes.barHeight;
