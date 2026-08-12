@@ -349,6 +349,7 @@ Singleton {
                         property string placementStrategy: "free" // "free", "leastBusy", "mostBusy"
                         property real x: 800
                         property real y: 500
+                        property string sizeMode: "1x3" 
                     }
                 }
                 property list<string> screenList: [] 
