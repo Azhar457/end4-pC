@@ -382,6 +382,9 @@ Singleton {
                         property int delay: 140
                     }
                 }
+                property bool showFrame: false
+                property real frameThickness: 4
+                property string frameColor: "black"
                 property bool bottom: false // Instead of top
                 property int cornerStyle: 0 // 0: Hug | 1: Float | 2: Plain rectangle
                 property bool floatStyleShadow: true // Show shadow behind bar when cornerStyle == 1 (Float)
@@ -695,6 +698,8 @@ Singleton {
                     property bool clickless: false
                     property int cornerRegionWidth: 250
                     property int cornerRegionHeight: 5
+                    property string bottomLeftAction: "sidebarLeftOpen"
+                    property string bottomRightAction: "sidebarRightOpen"
                     property bool visualize: false
                     property bool clicklessCornerEnd: true
                     property int clicklessCornerVerticalOffset: 1
