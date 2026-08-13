@@ -17,6 +17,15 @@ AbstractBackgroundWidget {
     property real widgetWidth:  sizeMode === "2x2" ? 276 : 420
     property real widgetHeight: sizeMode === "2x2" ? 252 : 120
 
+    readonly property real widthToggleFraction: 0.3
+    readonly property real widthToggleDelta: (420 - 276) * root.widthToggleFraction
+
+    function modeForDrag(dx) {
+        if (root.sizeMode === "2x2" && dx > root.widthToggleDelta) return "4x1"
+        if (root.sizeMode === "4x1" && dx < -root.widthToggleDelta) return "2x2"
+        return root.sizeMode
+    }
+
     Behavior on widgetWidth  { animation: Appearance.animation.elementResize.numberAnimation.createObject(this) }
     Behavior on widgetHeight { animation: Appearance.animation.elementResize.numberAnimation.createObject(this) }
 
@@ -301,34 +310,13 @@ AbstractBackgroundWidget {
                 }
             }
 
-            Rectangle {
-                id: toggleHandle
-                width: 16; height: 16; radius: 4
-                color: Appearance.colors.colOnPrimaryContainer
-                anchors { right: parent.right; bottom: parent.bottom; margins: 4 }
-                opacity: (root.containsMouse || toggleArea.containsMouse || toggleArea.pressed) ? 0.5 : 0
-                visible: opacity > 0 && !Config.options.background.widgetsLocked
-
-                Behavior on opacity { NumberAnimation { duration: 150 } }
-
-                MaterialSymbol {
-                    anchors.centerIn: parent
-                    text: root.sizeMode === "2x2" ? "calendar_view_month" : "calendar_view_week"
-                    iconSize: 11
-                    color: Appearance.colors.colPrimaryContainer
-                }
-
-                MouseArea {
-                    id: toggleArea
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: {
-                        if (root.showingSettings) root.showingSettings = false
-                        root.sizeMode = root.sizeMode === "2x2" ? "4x1" : "2x2"
-                        root.configEntry.sizeMode = root.sizeMode
-                    }
-                }
+            ResizeHandler {
+                anchorItem: contentRect
+                hoverActive: root.containsMouse
+                locked: Config.options.background.widgetsLocked || root.showingSettings
+                currentWidth: root.widgetWidth
+                onResizedXY: (dx, dy, startWidth) => { root.sizeMode = root.modeForDrag(dx) }
+                onResizeFinished: { root.configEntry.sizeMode = root.sizeMode }
             }
         }
     }

@@ -42,9 +42,16 @@ AbstractBackgroundWidget {
     property real buttonSize: 34
     property real buttonIconSize: 18
 
+    readonly property real mediaProgress: {
+        const pos = root.currentPlayer?.position ?? 0
+        const len = root.currentPlayer?.length ?? 0
+        return len > 0 ? Math.max(0, Math.min(1, pos / len)) : 0
+    }
+
     readonly property real cardSpacing: 12
     readonly property real singleWidth: 132
     readonly property real cardHeight: 120
+    readonly property real doubleCardHeight: root.cardHeight * 2 + root.cardSpacing
 
     readonly property real snapWidth1: root.singleWidth
     readonly property real snapWidth2: root.singleWidth * 2 + root.cardSpacing
@@ -56,6 +63,7 @@ AbstractBackgroundWidget {
         switch (root.sizeMode) {
             case "1x1": return root.snapWidth1
             case "1x2": return root.snapWidth2
+            case "2x3": return root.snapWidth3
             default:    return root.snapWidth3
         }
     }
@@ -66,6 +74,16 @@ AbstractBackgroundWidget {
         if (value < mid1) return "1x1"
         if (value < mid2) return "1x2"
         return "1x3"
+    }
+
+    readonly property real heightEnterFraction: 0.2
+    readonly property real heightEnterDelta: (root.doubleCardHeight - root.cardHeight) * root.heightEnterFraction
+
+    function modeForDrag(dx, dy, startWidth) {
+        if (root.sizeMode === "1x3" && dy > root.heightEnterDelta) {
+            return "2x3"
+        }
+        return root.modeForWidth(startWidth + dx)
     }
 
     Behavior on widgetWidth {
@@ -117,7 +135,9 @@ AbstractBackgroundWidget {
     Rectangle {
         id: card
         implicitWidth: root.widgetWidth
-        implicitHeight: root.cardHeight + (root.sizeMode === "1x3" && root.showLyrics ? 264 : 0)
+        implicitHeight: root.sizeMode === "2x3"
+            ? root.doubleCardHeight
+            : (root.cardHeight + (root.sizeMode === "1x3" && root.showLyrics ? 264 : 0))
         radius: Appearance.rounding?.verylarge ?? 30
         color: Appearance.colors.colPrimaryContainer
         clip: true
@@ -131,6 +151,7 @@ AbstractBackgroundWidget {
             sourceComponent: {
                 if (root.sizeMode === "1x1") return oneByOneContent
                 if (root.sizeMode === "1x2") return oneByTwoContent
+                if (root.sizeMode === "2x3") return twoByThreeContent
                 return oneByThreeContent
             }
         }
@@ -592,12 +613,156 @@ AbstractBackgroundWidget {
             }
         }
 
+        // 2x3
+        Component {
+            id: twoByThreeContent
+
+            ColumnLayout {
+                anchors.fill: parent
+                spacing: 0
+
+                Rectangle {
+                    id: labelArea
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 82
+                    color: Appearance.colors.colSurfaceContainerLow
+                    topLeftRadius: card.radius
+                    topRightRadius: card.radius
+                    bottomLeftRadius: 0
+                    bottomRightRadius: 0
+
+                    RowLayout {
+                        anchors {
+                            fill: parent
+                            leftMargin: 14
+                            rightMargin: 16
+                            topMargin: 14
+                            bottomMargin: 14
+                        }
+                        spacing: 12
+
+                        Rectangle {
+                            id: labelArt
+                            Layout.preferredWidth: 54
+                            Layout.preferredHeight: 54
+                            Layout.alignment: Qt.AlignVCenter
+                            color: Appearance.colors.colPrimaryContainer
+                            radius: Appearance.rounding?.normal ?? 12
+                            clip: true
+                            layer.enabled: true
+                            layer.effect: OpacityMask {
+                                maskSource: Rectangle {
+                                    width: labelArt.width
+                                    height: labelArt.height
+                                    radius: labelArt.radius
+                                }
+                            }
+
+                            StyledImage {
+                                anchors.fill: parent
+                                source: root.displayedArtFilePath
+                                fillMode: Image.PreserveAspectCrop
+                                cache: false
+                                antialiasing: true
+                                sourceSize.width: labelArt.width * 2
+                                sourceSize.height: labelArt.height * 2
+                                visible: root.displayedArtFilePath !== ""
+                            }
+
+                            MaterialSymbol {
+                                anchors.centerIn: parent
+                                fill: 1
+                                text: "music_note"
+                                iconSize: 22
+                                color: Appearance.colors.colOnPrimaryContainer
+                                visible: root.displayedArtFilePath === ""
+                            }
+                        }
+
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            Layout.alignment: Qt.AlignVCenter
+                            spacing: 2
+
+                            StyledText {
+                                Layout.fillWidth: true
+                                text: root.currentPlayer?.trackTitle ?? Translation.tr("Something")
+                                font.pixelSize: Appearance.font.pixelSize.small
+                                font.weight: Font.DemiBold
+                                font.italic: true
+                                color: Appearance.colors.colOnPrimaryContainer
+                                elide: Text.ElideRight
+                            }
+                            StyledText {
+                                Layout.fillWidth: true
+                                text: root.currentPlayer?.trackArtist ?? "Play"
+                                font.pixelSize: Appearance.font.pixelSize.smaller
+                                color: Appearance.colors.colOnPrimaryContainer
+                                opacity: 0.65
+                                elide: Text.ElideRight
+                            }
+                        }
+
+                        // Controls
+                        RowLayout { 
+                            spacing: 2 // There were buttons here but I removed them.
+
+                            MaterialShapeWrappedMaterialSymbol {
+                                shape: MaterialShape.Shape.Cookie12Sided
+                                color: Appearance.colors.colPrimary
+                                colSymbol: Appearance.colors.colOnPrimary
+                                text: root.currentPlayer?.isPlaying ? "pause" : "play_arrow"
+                                iconSize: root.buttonIconSize + 10
+                                fill: 1
+                                padding: 6
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    acceptedButtons: Qt.LeftButton | Qt.RightButton
+                                    onClicked: (mouse) => {
+                                        if (mouse.button === Qt.RightButton) {
+                                            root.currentPlayer?.next()
+                                        } else {
+                                            root.currentPlayer?.togglePlaying()
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    color: ColorUtils.transparentize(Appearance.colors.colOnPrimaryContainer, 0.88)
+                    topLeftRadius: 0
+                    topRightRadius: 0
+                    bottomLeftRadius: card.radius
+                    bottomRightRadius: card.radius
+                    clip: true
+
+                    Lyrics {
+                        anchors.fill: parent
+                        anchors.margins: 10
+                        textAlignment: Text.AlignHCenter
+                        textColor: Appearance.colors.colOnPrimaryContainer
+                        activeColor: Appearance.colors.colPrimary
+                        dimColor: Appearance.colors.colSubtext
+                        indicatorColor: Appearance.colors.colPrimary
+                        indicatorShapeColor: Appearance.colors.colOnPrimary
+                    }
+                }
+            }
+        }
+
         ResizeHandler {
             anchorItem: card
             hoverActive: root.containsMouse
             locked: Config.options.background.widgetsLocked
             currentWidth: root.widgetWidth
-            onResized: (newWidth) => { root.sizeMode = root.modeForWidth(newWidth) }
+            resizeMode: "diagonal"
+            onResizedXY: (dx, dy, startWidth) => { root.sizeMode = root.modeForDrag(dx, dy, startWidth) }
             onResizeFinished: { root.configEntry.sizeMode = root.sizeMode }
         }
     }
