@@ -292,7 +292,7 @@ ContentPage {
                 ColorSelectionArray {
                     icon: "imagesearch_roller"
                     text: Translation.tr("Frame Color")
-                    options: ["primary", "secondary", "tertiary", "primaryContainer", "secondaryContainer", "tertiaryContainer", "black"] // sorry only solid colors transparency looks bad
+                    options: ["primary", "secondary", "tertiary", "primaryContainer", "secondaryContainer", "tertiaryContainer", "layer0", "black"] // sorry only solid colors transparency looks bad
                     currentValue: Config.options.bar.frameColor
                     onSelected: newValue => {
                         Config.options.bar.frameColor = newValue
