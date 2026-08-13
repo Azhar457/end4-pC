@@ -12,6 +12,19 @@ Scope {
     property real frameThickness: Config.options.bar.frameThickness
     property color frameColor: Appearance.getColorFromName(Config.options.bar.frameColor)
 
+    readonly property bool hideBarSideFrame: Config.options.bar.cornerStyle === 0
+    readonly property string barPosition: {
+        if (Config.options.bar.vertical)
+            return Config.options.bar.bottom ? "right" : "left"
+        return Config.options.bar.bottom ? "bottom" : "top"
+    }
+
+    function frameVisibleFor(side) {
+        if (!Config.options.bar.showFrame) return false
+        if (root.hideBarSideFrame && side === root.barPosition) return false
+        return true
+    }
+
     component FrameCornerWindow: PanelWindow {
         id: cornerPanelWindow
         property var corner
@@ -58,9 +71,8 @@ Scope {
 
             PanelWindow { // top
                 screen: frameGroup.modelData
-                visible: Config.options.bar.showFrame
                 exclusionMode: ExclusionMode.Normal
-                exclusiveZone: root.frameThickness
+                exclusiveZone: root.frameVisibleFor("top") ? root.frameThickness : 0
                 WlrLayershell.namespace: "quickshell:screenframe"
                 WlrLayershell.layer: WlrLayer.Top
                 WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
@@ -69,14 +81,13 @@ Scope {
                 anchors { top: true; left: true; right: true }
                 mask: Region {}
 
-                Rectangle { anchors.fill: parent; color: root.frameColor }
+                Rectangle { anchors.fill: parent; color: root.frameColor; visible: root.frameVisibleFor("top") }
             }
 
             PanelWindow { // bottom
                 screen: frameGroup.modelData
-                visible: Config.options.bar.showFrame
                 exclusionMode: ExclusionMode.Normal
-                exclusiveZone: root.frameThickness
+                exclusiveZone: root.frameVisibleFor("bottom") ? root.frameThickness : 0
                 WlrLayershell.namespace: "quickshell:screenframe"
                 WlrLayershell.layer: WlrLayer.Top
                 WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
@@ -85,14 +96,13 @@ Scope {
                 anchors { bottom: true; left: true; right: true }
                 mask: Region {}
 
-                Rectangle { anchors.fill: parent; color: root.frameColor }
+                Rectangle { anchors.fill: parent; color: root.frameColor; visible: root.frameVisibleFor("bottom") }
             }
 
             PanelWindow { // left
                 screen: frameGroup.modelData
-                visible: Config.options.bar.showFrame
                 exclusionMode: ExclusionMode.Normal
-                exclusiveZone: root.frameThickness
+                exclusiveZone: root.frameVisibleFor("left") ? root.frameThickness : 0
                 WlrLayershell.namespace: "quickshell:screenframe"
                 WlrLayershell.layer: WlrLayer.Top
                 WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
@@ -101,14 +111,13 @@ Scope {
                 anchors { left: true; top: true; bottom: true }
                 mask: Region {}
 
-                Rectangle { anchors.fill: parent; color: root.frameColor }
+                Rectangle { anchors.fill: parent; color: root.frameColor; visible: root.frameVisibleFor("left") }
             }
 
             PanelWindow { // right
                 screen: frameGroup.modelData
-                visible: Config.options.bar.showFrame
                 exclusionMode: ExclusionMode.Normal
-                exclusiveZone: root.frameThickness
+                exclusiveZone: root.frameVisibleFor("right") ? root.frameThickness : 0
                 WlrLayershell.namespace: "quickshell:screenframe"
                 WlrLayershell.layer: WlrLayer.Top
                 WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
@@ -117,7 +126,7 @@ Scope {
                 anchors { right: true; top: true; bottom: true }
                 mask: Region {}
 
-                Rectangle { anchors.fill: parent; color: root.frameColor }
+                Rectangle { anchors.fill: parent; color: root.frameColor; visible: root.frameVisibleFor("right") }
             }
 
             FrameCornerWindow { screen: frameGroup.modelData; corner: RoundCorner.CornerEnum.TopLeft }
