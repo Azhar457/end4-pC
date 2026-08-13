@@ -290,6 +290,7 @@ ContentPage {
                     }
                     ConfigSwitch {
                         buttonIcon: "colors"
+                        enabled: Config.options.bar.showFrame
                         text: Translation.tr("Follow Frame Color")
                         checked: Config.options.bar.followFrameColor
                         onCheckedChanged: { Config.options.bar.followFrameColor = checked; }
