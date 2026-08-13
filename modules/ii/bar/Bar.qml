@@ -252,6 +252,13 @@ Scope {
 
                         sourceComponent: Item {
                             implicitHeight: Appearance.rounding.screenRounding
+
+                            readonly property color decoratorColor: showBarBackground
+                                ? (Config.options.bar.followFrameColor && Config.options.bar.frameColor
+                                    ? Appearance.getColorFromName(Config.options.bar.frameColor)
+                                    : Appearance.colors.colLayer0)
+                                : "transparent"
+
                             RoundCorner {
                                 id: leftCorner
                                 anchors {
@@ -261,7 +268,7 @@ Scope {
                                 }
 
                                 implicitSize: Appearance.rounding.screenRounding
-                                color: showBarBackground ? Appearance.colors.colLayer0 : "transparent"
+                                color: parent.decoratorColor
 
                                 corner: RoundCorner.CornerEnum.TopLeft
                                 states: State {
@@ -280,7 +287,7 @@ Scope {
                                     bottom: Config.options.bar.bottom ? parent.bottom : undefined
                                 }
                                 implicitSize: Appearance.rounding.screenRounding
-                                color: showBarBackground ? Appearance.colors.colLayer0 : "transparent"
+                                color: parent.decoratorColor
 
                                 corner: RoundCorner.CornerEnum.TopRight
                                 states: State {

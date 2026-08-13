@@ -243,6 +243,15 @@ ContentPage {
                         { displayName: Translation.tr("Segmented"), icon: "tablet",           value: "segmented" },
                     ]
                 }
+                ColorSelectionArray {
+                    icon: "brush"
+                    text: Translation.tr("Group Color")
+                    options: ["primaryContainer", "secondaryContainer", "tertiaryContainer", "layer1", "layer0"]
+                    currentValue: Config.options.bar.groupColor
+                    onSelected: newValue => {
+                        Config.options.bar.groupColor = newValue
+                    }
+                }
                 ConfigRow{
                     uniform: true
                     ConfigSwitch {
@@ -263,19 +272,27 @@ ContentPage {
                         ]
                     }
                 }
-                ConfigSwitch {
-                    buttonIcon: "panorama_wide_angle"
-                    text: Translation.tr("Show Frame")
-                    checked: Config.options.bar.showFrame
+                ConfigRow {
+                    ConfigSwitch {
+                        buttonIcon: "panorama_wide_angle"
+                        text: Translation.tr("Show Frame")
+                        checked: Config.options.bar.showFrame
 
-                    property bool switchReady: false
-                    Component.onCompleted: Qt.callLater(() => switchReady = true)
+                        property bool switchReady: false
+                        Component.onCompleted: Qt.callLater(() => switchReady = true)
 
-                    onCheckedChanged: {
-                        if (switchReady && checked) {
-                            GlobalStates.refreshBar();
+                        onCheckedChanged: {
+                            if (switchReady && checked) {
+                                GlobalStates.refreshBar();
+                            }
+                            Config.options.bar.showFrame = checked;
                         }
-                        Config.options.bar.showFrame = checked;
+                    }
+                    ConfigSwitch {
+                        buttonIcon: "colors"
+                        text: Translation.tr("Follow Frame Color")
+                        checked: Config.options.bar.followFrameColor
+                        onCheckedChanged: { Config.options.bar.followFrameColor = checked; }
                     }
                 }
                 ConfigSpinBox {
@@ -292,7 +309,7 @@ ContentPage {
                 ColorSelectionArray {
                     icon: "imagesearch_roller"
                     text: Translation.tr("Frame Color")
-                    options: ["primary", "secondary", "tertiary", "primaryContainer", "secondaryContainer", "tertiaryContainer", "layer0", "black"] // sorry only solid colors transparency looks bad
+                    options: ["primaryContainer", "secondaryContainer", "tertiaryContainer", "layer0", "black"] // sorry only solid colors transparency looks bad
                     currentValue: Config.options.bar.frameColor
                     onSelected: newValue => {
                         Config.options.bar.frameColor = newValue

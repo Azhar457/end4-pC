@@ -22,14 +22,13 @@ RowLayout {
         visible: root.showLabel
         text: root.icon
         iconSize: Appearance.font.pixelSize.normal + 5
-        color: Appearance.colors.colOnLayer1
+        color: Appearance.colors.colOnLayer0
     }
 
     StyledText {
         visible: root.showLabel
         text: root.text
-        font.pixelSize: Appearance.font.pixelSize.normal
-        color: Appearance.colors.colOnLayer1
+        color: Appearance.colors.colOnLayer0
     }
 
     Item {
