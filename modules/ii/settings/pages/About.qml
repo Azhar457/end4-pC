@@ -40,8 +40,11 @@ ContentPage {
             # Reload
             killall qs 2>/dev/null || true
             sleep 0.5
-            qs -c end4-pC >/tmp/qs.log 2>&1 &
+            setsid qs -c end4-pC >/tmp/qs.log 2>&1 < /dev/null &
             disown
+
+            # Cleanup: no dejar basura
+            rm -rf "$DIR/end4-pC-old"
         `
 
         Quickshell.execDetached(["kitty", "--hold", "bash", "-c", updateScript])
