@@ -168,7 +168,7 @@ Item {
                 id: topCol
                 anchors.fill: parent
                 visible: !root.isMaterial
-                spacing: Config.options.bar.borderless === "transparent" ? -4 : 2
+                spacing: Config.options.bar.borderless === "transparent" ? -4 : Config.options?.bar.borderless === "segmented" ? -2 : 2
 
                 Repeater {
                     model: root.effectiveLeftLayout
@@ -244,7 +244,7 @@ Item {
                 id: middleCol
                 anchors.fill: parent
                 visible: !root.isMaterial
-                spacing: Config.options.bar.borderless === "transparent" ? -4 : 2
+                spacing: Config.options.bar.borderless === "transparent" ? -4 : Config.options?.bar.borderless === "segmented" ? -2 : 2
 
                 Repeater {
                     model: root.effectiveMiddleLayout
@@ -321,7 +321,7 @@ Item {
                 id: bottomCol
                 anchors.fill: parent
                 visible: !root.isMaterial
-                spacing: Config.options.bar.borderless === "transparent" ? -4 : 2
+                spacing: Config.options.bar.borderless === "transparent" ? -4 : Config.options?.bar.borderless === "segmented" ? -2 : 2
 
                 Repeater {
                     model: root.effectiveRightLayout
