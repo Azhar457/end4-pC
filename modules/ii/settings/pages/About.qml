@@ -43,7 +43,7 @@ ContentPage {
             setsid qs -c end4-pC >/tmp/qs.log 2>&1 < /dev/null &
             disown
 
-            # Cleanup: no dejar basura
+            # Cleanup
             rm -rf "$DIR/end4-pC-old"
         `
 
