@@ -105,7 +105,11 @@ Variants {
 
         property list<HyprlandWorkspace> workspacesForMonitor: Hyprland.workspaces.values.filter(workspace => workspace.monitor && workspace.monitor.name == monitor.name)
         property var activeWorkspaceWithFullscreen: workspacesForMonitor.filter(workspace => ((workspace.toplevels.values.filter(window => window.wayland?.fullscreen)[0] != undefined) && workspace.active))[0]
-        visible: GlobalStates.screenLocked || (!(activeWorkspaceWithFullscreen != undefined)) || !Config?.options.background.hideWhenFullscreen
+        visible: true
+
+        readonly property bool hiddenForFullscreen: !GlobalStates.screenLocked
+            && (activeWorkspaceWithFullscreen != undefined)
+            && Config?.options.background.hideWhenFullscreen
 
         property HyprlandMonitor monitor: Hyprland.monitorFor(modelData)
 
@@ -240,6 +244,12 @@ Variants {
 
         Item {
             anchors.fill: parent
+            opacity: bgRoot.hiddenForFullscreen ? 0 : 1
+            enabled: !bgRoot.hiddenForFullscreen
+            
+            Behavior on opacity {
+                NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
+            }
 
             Image {
                 id: previousWallpaper
