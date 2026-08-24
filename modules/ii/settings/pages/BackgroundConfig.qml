@@ -1017,7 +1017,7 @@ ContentPage {
                         {
                             icon: "timer",
                             name: Translation.tr("Timers"),
-                            enabled: Config.options.background.widgets.todo.enable
+                            enabled: Config.options.background.widgets.timers.enable
                         }
                         
                     ]
