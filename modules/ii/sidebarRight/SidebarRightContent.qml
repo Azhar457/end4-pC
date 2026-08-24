@@ -334,6 +334,7 @@ Item {
             }
 
             BottomWidgetGroup {
+                visible: Config.options.sidebar.bottomGroup
                 id: bottomWidgetGroup
                 Layout.alignment: Qt.AlignHCenter
                 Layout.fillHeight: false
