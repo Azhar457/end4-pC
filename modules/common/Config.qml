@@ -301,6 +301,13 @@ Singleton {
                         property real y: 100
                     }
 
+                    property JsonObject todo: JsonObject {
+                        property bool enable: false
+                        property string placementStrategy: "free"
+                        property real x: 400
+                        property real y: 100
+                    }
+
                     property JsonObject userCard: JsonObject {
                         property bool enable: false
                         property string placementStrategy: "free"
@@ -334,6 +341,14 @@ Singleton {
                     }
 
                     property JsonObject resources: JsonObject {
+                        property bool enable: false
+                        property string placementStrategy: "free"
+                        property real x: 400
+                        property real y: 100
+                        property bool vertical: false
+                    }
+
+                    property JsonObject timers: JsonObject {
                         property bool enable: false
                         property string placementStrategy: "free"
                         property real x: 400
