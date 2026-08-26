@@ -43,8 +43,6 @@ MouseArea {
     onClicked: mouse => {
         if (mouse.button === Qt.RightButton) {
             GlobalStates.requestBluetoothDialog();
-        } else {
-            BluetoothStatus.togglePower();
         }
     }
 
