@@ -93,7 +93,7 @@ StyledPopup {
 
                         MaterialShapeWrappedMaterialSymbol {
                             Layout.alignment: Qt.AlignVCenter
-                            shape: MaterialShape.Shape.Circle
+                            shape: MaterialShape.Shape.ClamShell
                             text: Icons.getBluetoothDeviceMaterialSymbol(modelData?.icon || "")
                             iconSize: Appearance.font.pixelSize.large
                             implicitSize: Appearance.font.pixelSize.hugeass * 2
