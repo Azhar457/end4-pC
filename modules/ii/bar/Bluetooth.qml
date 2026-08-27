@@ -99,7 +99,9 @@ MouseArea {
 
             StyledText {
                 Layout.alignment: Qt.AlignHCenter
-                visible: root.hasBattery
+                Layout.leftMargin: 2
+                Layout.bottomMargin: 4
+                visible: true
                 font.pixelSize: Appearance.font.pixelSize.smallest
                 font.features: { "tnum": 1 }
                 color: root.isLow
