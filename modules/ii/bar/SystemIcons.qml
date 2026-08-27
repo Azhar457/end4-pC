@@ -52,7 +52,7 @@ Item {
             onLoaded: item.color = root.isMaterial ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer1
         }
         MaterialSymbol {
-            text: Network.ethernet ? "network_wifi" : Network.materialSymbol
+            text: Network.materialSymbol
             iconSize: Appearance.font.pixelSize.larger
             color: root.isMaterial ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer1
         }
