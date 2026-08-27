@@ -431,7 +431,7 @@ Item {
         required property string styleName
         Layout.alignment: item?.Layout.alignment ?? Qt.AlignHCenter
         Layout.fillWidth: item?.Layout.fillWidth ?? false
-        visible: active && ((item?.visible ?? true) || (item?.editMode ?? false))
+        visible: active
         active: Config.options.sidebar.quickToggles.style === styleName
         Connections {
             target: quickPanelImplLoader.item
