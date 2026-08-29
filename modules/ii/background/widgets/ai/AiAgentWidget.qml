@@ -41,6 +41,9 @@ AbstractBackgroundWidget {
 	property string activeSessionTitle: "Chat"
 	property int activeSessionToolCallsCount: 0
 	readonly property int activeSessionMessageCount: messageModel.count
+	property bool showLogsPanel: false
+
+	ListModel { id: agentLogModel }
 
 	function countToolsInMessages(msgs) {
 		if (!Array.isArray(msgs)) return 0;
@@ -379,12 +382,38 @@ AbstractBackgroundWidget {
 				if (!trimmed) return;
 				try {
 					const ev = JSON.parse(trimmed);
+
+					if (ev.type === "log") {
+						agentLogModel.append({
+							time: Qt.formatTime(new Date(), "hh:mm:ss"),
+							level: ev.level || "info",
+							text: ev.text || ""
+						});
+						if (agentLogsListView) agentLogsListView.positionViewAtEnd();
+						return;
+					}
+
 					if (messageModel.count === 0) return;
-					const lastIdx = messageModel.count - 1;
-					const cur = messageModel.get(lastIdx);
+					let lastIdx = messageModel.count - 1;
+					let cur = messageModel.get(lastIdx);
 
 					if (ev.type === "turn_start") {
 						agentProcess.isExecuting = true;
+						if (ev.turn > 1 && (cur.toolName || cur.toolResult || (cur.content && cur.content.length > 0))) {
+							messageModel.append({
+								role: "assistant",
+								content: "",
+								thinkContent: "",
+								toolName: "",
+								toolInput: ({}),
+								toolResult: "",
+								isRunningTool: false,
+								isToolError: false,
+								awaitingApproval: false
+							});
+							lastIdx = messageModel.count - 1;
+							cur = messageModel.get(lastIdx);
+						}
 					} else if (ev.type === "content") {
 						messageModel.setProperty(lastIdx, "content", cur.content + ev.delta);
 					} else if (ev.type === "think") {
@@ -774,6 +803,12 @@ AbstractBackgroundWidget {
 
 					ToolbarPairedFab {
 						baseSize: 32
+						iconText: root.showLogsPanel ? "chat" : "terminal"
+						onClicked: root.showLogsPanel = !root.showLogsPanel
+					}
+
+					ToolbarPairedFab {
+						baseSize: 32
 						iconText: "delete_sweep"
 						onClicked: root.clearCurrentSession()
 					}
@@ -788,6 +823,7 @@ AbstractBackgroundWidget {
 				// Messages ListView
 				StyledListView {
 					id: chatListView
+					visible: !root.showLogsPanel
 					Layout.fillWidth: true
 					Layout.fillHeight: true
 					clip: true
@@ -939,6 +975,124 @@ AbstractBackgroundWidget {
 												copyTimer.restart();
 											}
 										}
+									}
+								}
+							}
+						}
+					}
+				}
+
+				// Live Logs Inspector Panel
+				Rectangle {
+					id: agentLogsPanel
+					visible: root.showLogsPanel
+					Layout.fillWidth: true
+					Layout.fillHeight: true
+					radius: Appearance.rounding.normal
+					color: Appearance.colors.colLayer1
+					border.width: 1
+					border.color: Appearance.colors.colLayer0Border
+
+					ColumnLayout {
+						anchors.fill: parent
+						anchors.margins: 10
+						spacing: 6
+
+						RowLayout {
+							Layout.fillWidth: true
+							spacing: 6
+
+							MaterialSymbol {
+								iconSize: 18
+								color: Appearance.colors.colPrimary
+								text: "terminal"
+							}
+
+							StyledText {
+								Layout.fillWidth: true
+								font.pixelSize: Appearance.font.pixelSize.small
+								font.weight: Font.Bold
+								color: Appearance.colors.colPrimary
+								text: `Agent Runtime Logs (${agentLogModel.count} events)`
+							}
+
+							ToolbarPairedFab {
+								baseSize: 26
+								iconText: "delete"
+								onClicked: agentLogModel.clear()
+							}
+						}
+
+						StyledListView {
+							id: agentLogsListView
+							Layout.fillWidth: true
+							Layout.fillHeight: true
+							clip: true
+							spacing: 6
+							model: agentLogModel
+
+							delegate: Rectangle {
+								required property string time
+								required property string level
+								required property string text
+
+								width: agentLogsListView.width
+								implicitHeight: logCol.implicitHeight + 10
+								radius: Appearance.rounding.small
+								color: Appearance.colors.colLayer0
+
+								RowLayout {
+									id: logCol
+									anchors {
+										left: parent.left
+										right: parent.right
+										verticalCenter: parent.verticalCenter
+										margins: 8
+									}
+									spacing: 8
+
+									StyledText {
+										font.pixelSize: Appearance.font.pixelSize.smaller
+										font.family: Appearance.font.family.monospace
+										color: Appearance.colors.colSubtext
+										text: time
+									}
+
+									Rectangle {
+										implicitHeight: 18
+										implicitWidth: levelText.implicitWidth + 8
+										radius: Appearance.rounding.full
+										color: {
+											if (level === "tool") return Appearance.colors.colTertiaryContainer;
+											if (level === "error") return Appearance.colors.colErrorContainer;
+											if (level === "warn") return Appearance.colors.colWarningContainer;
+											if (level === "done") return Appearance.colors.colSecondaryContainer;
+											return Appearance.colors.colPrimaryContainer;
+										}
+
+										StyledText {
+											id: levelText
+											anchors.centerIn: parent
+											font.pixelSize: 10
+											font.weight: Font.Bold
+											color: {
+												if (level === "tool") return Appearance.colors.colOnTertiaryContainer;
+												if (level === "error") return Appearance.colors.colOnErrorContainer;
+												if (level === "warn") return Appearance.colors.colOnWarningContainer;
+												if (level === "done") return Appearance.colors.colOnSecondaryContainer;
+												return Appearance.colors.colOnPrimaryContainer;
+											}
+											text: level.toUpperCase()
+										}
+									}
+
+									StyledText {
+										Layout.fillWidth: true
+										font.pixelSize: Appearance.font.pixelSize.smaller
+										font.family: Appearance.font.family.monospace
+										color: Appearance.colors.colOnLayer0
+										wrapMode: Text.WrapAnywhere
+										text: text
 									}
 								}
 							}

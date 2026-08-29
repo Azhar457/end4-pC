@@ -464,6 +464,7 @@ export async function runAgentLoop({
 	requestApproval = null,
 	sendEvent = () => {}
 }) {
+	sendEvent({ type: "log", level: "info", text: `🚀 Initializing Agent Loop for model: ${model}` });
 	const messages = [
 		{ role: "system", content: buildAgentSystemPrompt() },
 		...history,
@@ -473,6 +474,7 @@ export async function runAgentLoop({
 	const maxTurns = 6;
 	for (let turn = 0; turn < maxTurns; turn++) {
 		sendEvent({ type: "turn_start", turn: turn + 1 });
+		sendEvent({ type: "log", level: "info", text: `🔄 Turn ${turn + 1}/${maxTurns}: sending context (${messages.length} messages) to ${endpoint}...` });
 
 		let result;
 		try {
@@ -485,11 +487,13 @@ export async function runAgentLoop({
 				onChunk: (d) => sendEvent({ type: "content", delta: d })
 			});
 		} catch (err) {
+			sendEvent({ type: "log", level: "error", text: `❌ LLM request failed: ${err.message}` });
 			sendEvent({ type: "error", message: err.message });
 			break;
 		}
 
 		const { text, toolCalls } = result;
+		sendEvent({ type: "log", level: "llm", text: `📥 Turn ${turn + 1} stream finished. Content length: ${text.length}, Tool calls: ${toolCalls.length}` });
 
 		// Persist assistant message (with tool_calls for proper multi-turn context).
 		if (toolCalls.length) {
@@ -506,12 +510,17 @@ export async function runAgentLoop({
 			messages.push({ role: "assistant", content: text });
 		}
 
-		if (toolCalls.length === 0) break;
+		if (toolCalls.length === 0) {
+			sendEvent({ type: "log", level: "info", text: `✨ No further tool calls requested. Final answer ready.` });
+			break;
+		}
 
 		for (const tc of toolCalls) {
 			if (confirmTools && isDangerous(tc.name, tc.parameters) && requestApproval) {
+				sendEvent({ type: "log", level: "warn", text: `⚠️ Dangerous tool '${tc.name}' needs user approval...` });
 				const approved = await requestApproval({ id: tc.id, tool: tc.name, input: tc.parameters });
 				if (!approved) {
+					sendEvent({ type: "log", level: "warn", text: `🚫 Tool '${tc.name}' denied by user.` });
 					sendEvent({ type: "tool_denied", id: tc.id, tool: tc.name });
 					messages.push({
 						role: "tool",
@@ -520,10 +529,13 @@ export async function runAgentLoop({
 					});
 					continue;
 				}
+				sendEvent({ type: "log", level: "info", text: `✅ Tool '${tc.name}' approved by user.` });
 			}
 
 			sendEvent({ type: "tool_start", id: tc.id, tool: tc.name, input: tc.parameters });
+			sendEvent({ type: "log", level: "tool", text: `⚙️ Executing '${tc.name}': ${JSON.stringify(tc.parameters).slice(0, 100)}` });
 			const toolResult = await executeTool(tc.name, tc.parameters);
+			sendEvent({ type: "log", level: "tool", text: `✔️ '${tc.name}' returned ${toolResult.length} characters.` });
 			sendEvent({
 				type: "tool_end",
 				id: tc.id,
@@ -535,6 +547,7 @@ export async function runAgentLoop({
 		}
 	}
 
+	sendEvent({ type: "log", level: "done", text: `🏁 Agent loop completed.` });
 	sendEvent({ type: "done", history: messages.filter((m) => m.role !== "system") });
 }
 
