@@ -39,6 +39,24 @@ AbstractBackgroundWidget {
 	property string activeSessionId: ""
 	property var sessionsList: []
 	property string activeSessionTitle: "Chat"
+	property int activeSessionToolCallsCount: 0
+	readonly property int activeSessionMessageCount: messageModel.count
+
+	function countToolsInMessages(msgs) {
+		if (!Array.isArray(msgs)) return 0;
+		return msgs.filter(m => (m.toolName && m.toolName.length > 0) || (m.toolResult && m.toolResult.length > 0)).length;
+	}
+
+	function updateActiveStats() {
+		let cnt = 0;
+		for (let i = 0; i < messageModel.count; i++) {
+			const item = messageModel.get(i);
+			if ((item.toolName && item.toolName.length > 0) || (item.toolResult && item.toolResult.length > 0)) {
+				cnt++;
+			}
+		}
+		root.activeSessionToolCallsCount = cnt;
+	}
 
 	readonly property string sessionsFilePath: `${Directories.state}/quickshell/user/ai_agent_sessions.json`
 	readonly property string agentCorePath: `${Directories.scriptPath}/agent/agent-core.mjs`
@@ -46,7 +64,21 @@ AbstractBackgroundWidget {
 	readonly property var aiCfg: Config.options.background.widgets.aiAgent
 
 	onModeChanged: {
-		GlobalStates.desktopWidgetKeyboardFocus = (mode === "chat" && inputArea.activeFocus) || (mode === "settings");
+		// Keyboard focus must be claimed BEFORE focusing any field: the layer
+		// drops keyboard grab when this is false, making forceActiveFocus a no-op.
+		if (mode === "chat" || mode === "settings") {
+			GlobalStates.desktopWidgetKeyboardFocus = true;
+			if (mode === "chat") focusTimer.restart();
+		} else {
+			GlobalStates.desktopWidgetKeyboardFocus = false;
+		}
+	}
+
+	Timer {
+		id: focusTimer
+		interval: 60  // after flip animation swaps pages
+		repeat: false
+		onTriggered: inputArea.forceActiveFocus()
 	}
 
 	Component.onCompleted: {
@@ -163,6 +195,7 @@ AbstractBackgroundWidget {
 		root.activeSessionTitle = "New Conversation";
 		messageModel.clear();
 		inputArea.text = "";
+		root.activeSessionToolCallsCount = 0;
 
 		const updated = [
 			{
@@ -197,6 +230,7 @@ AbstractBackgroundWidget {
 			}
 		}
 		inputArea.text = sess.draft || "";
+		updateActiveStats();
 
 		if (shouldFlip) {
 			toggleFlip("chat");
@@ -219,6 +253,7 @@ AbstractBackgroundWidget {
 	function clearCurrentSession() {
 		messageModel.clear();
 		inputArea.text = "";
+		root.activeSessionToolCallsCount = 0;
 		saveSessionsToDisk();
 	}
 
@@ -310,27 +345,33 @@ AbstractBackgroundWidget {
 						messageModel.setProperty(lastIdx, "toolInput", ev.input);
 						messageModel.setProperty(lastIdx, "isRunningTool", false);
 						messageModel.setProperty(lastIdx, "awaitingApproval", true);
+						root.updateActiveStats();
 					} else if (ev.type === "tool_start") {
 						messageModel.setProperty(lastIdx, "toolName", ev.tool);
 						messageModel.setProperty(lastIdx, "toolInput", ev.input);
 						messageModel.setProperty(lastIdx, "isRunningTool", true);
 						messageModel.setProperty(lastIdx, "awaitingApproval", false);
+						root.updateActiveStats();
 					} else if (ev.type === "tool_end") {
 						messageModel.setProperty(lastIdx, "toolResult", ev.result || "");
 						messageModel.setProperty(lastIdx, "isRunningTool", false);
 						messageModel.setProperty(lastIdx, "isToolError", !!ev.isError);
+						root.updateActiveStats();
 					} else if (ev.type === "tool_denied") {
 						messageModel.setProperty(lastIdx, "toolResult", "Tool execution was denied by user.");
 						messageModel.setProperty(lastIdx, "isRunningTool", false);
 						messageModel.setProperty(lastIdx, "isToolError", true);
 						messageModel.setProperty(lastIdx, "awaitingApproval", false);
+						root.updateActiveStats();
 					} else if (ev.type === "error") {
 						agentProcess.isExecuting = false;
 						const errText = `\n\n**Error**: ${ev.message}`;
 						messageModel.setProperty(lastIdx, "content", cur.content + errText);
+						root.updateActiveStats();
 						root.saveSessionsToDisk();
 					} else if (ev.type === "done") {
 						agentProcess.isExecuting = false;
+						root.updateActiveStats();
 						root.saveSessionsToDisk();
 					}
 					chatListView.positionViewAtEnd();
@@ -345,8 +386,16 @@ AbstractBackgroundWidget {
 		const userPrompt = text.trim();
 		inputArea.text = "";
 
-		if (messageModel.count === 0) {
-			root.activeSessionTitle = userPrompt.slice(0, 30);
+		// Generate title automatically from first user prompt if still default
+		if (root.activeSessionTitle === "New Conversation" || root.activeSessionTitle === "Chat" || messageModel.count <= 2) {
+			const clean = userPrompt.replace(/\s+/g, " ").trim();
+			root.activeSessionTitle = clean.length > 32 ? (clean.slice(0, 32) + "…") : clean;
+			root.sessionsList = root.sessionsList.map(s => {
+				if (s.id === root.activeSessionId) {
+					return Object.assign({}, s, { title: root.activeSessionTitle });
+				}
+				return s;
+			});
 		}
 
 		messageModel.append({
@@ -557,10 +606,22 @@ AbstractBackgroundWidget {
 										elide: Text.ElideRight
 									}
 
-									StyledText {
-										font.pixelSize: Appearance.font.pixelSize.smaller
-										color: sessionCard.isCurrent ? Appearance.colors.colOnPrimaryContainer : Appearance.colors.colSubtext
-										text: `${Array.isArray(modelData.messages) ? modelData.messages.length : 0} messages`
+									RowLayout {
+										spacing: 6
+
+										StyledText {
+											font.pixelSize: Appearance.font.pixelSize.smaller
+											color: sessionCard.isCurrent ? Appearance.colors.colOnPrimaryContainer : Appearance.colors.colSubtext
+											text: `💬 ${Array.isArray(modelData.messages) ? modelData.messages.length : 0} msgs`
+										}
+
+										StyledText {
+											visible: root.countToolsInMessages(modelData.messages) > 0
+											font.pixelSize: Appearance.font.pixelSize.smaller
+											font.weight: Font.Medium
+											color: sessionCard.isCurrent ? Appearance.colors.colOnPrimaryContainer : Appearance.colors.colTertiary
+											text: `⚡ ${root.countToolsInMessages(modelData.messages)} tools`
+										}
 									}
 								}
 
@@ -612,7 +673,7 @@ AbstractBackgroundWidget {
 					}
 
 					ColumnLayout {
-						spacing: 0
+						spacing: 1
 						StyledText {
 							font.pixelSize: Appearance.font.pixelSize.normal
 							font.weight: Font.DemiBold
@@ -621,10 +682,35 @@ AbstractBackgroundWidget {
 							elide: Text.ElideRight
 							Layout.maximumWidth: 200
 						}
-						StyledText {
-							font.pixelSize: Appearance.font.pixelSize.smaller
-							color: root.isBusy ? Appearance.colors.colPrimary : Appearance.colors.colSubtext
-							text: root.activeStatus
+
+						RowLayout {
+							spacing: 5
+
+							StyledText {
+								font.pixelSize: Appearance.font.pixelSize.smaller
+								color: root.isBusy ? Appearance.colors.colPrimary : Appearance.colors.colSubtext
+								text: root.activeStatus
+							}
+
+							StyledText {
+								font.pixelSize: Appearance.font.pixelSize.smaller
+								color: Appearance.colors.colSubtext
+								text: "•"
+							}
+
+							StyledText {
+								font.pixelSize: Appearance.font.pixelSize.smaller
+								color: Appearance.colors.colSubtext
+								text: `💬 ${root.activeSessionMessageCount}`
+							}
+
+							StyledText {
+								visible: root.activeSessionToolCallsCount > 0
+								font.pixelSize: Appearance.font.pixelSize.smaller
+								font.weight: Font.Medium
+								color: Appearance.colors.colTertiary
+								text: `• ⚡ ${root.activeSessionToolCallsCount}`
+							}
 						}
 					}
 
@@ -769,8 +855,9 @@ AbstractBackgroundWidget {
 
 					TapHandler {
 						onTapped: {
-							inputArea.forceActiveFocus();
+							// Claim keyboard grab first, then focus — order matters
 							GlobalStates.desktopWidgetKeyboardFocus = true;
+							inputArea.forceActiveFocus();
 						}
 					}
 
