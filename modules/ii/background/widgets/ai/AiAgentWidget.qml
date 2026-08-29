@@ -100,7 +100,7 @@ AbstractBackgroundWidget {
 	property string targetNextMode: "chat"
 
 	function providerConfig() {
-		const prov = aiCfg.provider || "opencode";
+		const prov = aiCfg.provider || "9router";
 		if (prov === "opencode" || prov === "opencode-free") {
 			return {
 				endpoint: "https://opencode.ai/zen/v1/chat/completions",
@@ -109,10 +109,16 @@ AbstractBackgroundWidget {
 			};
 		}
 		if (prov === "9router") {
+			const envKey = Quickshell.env("HERMES_CUSTOM_9ROUTER_API_KEY")
+				|| Quickshell.env("NINEROUTER_API_KEY")
+				|| Quickshell.env("OPENAI_API_KEY")
+				|| (KeyringStorage.keyringData?.apiKeys ? (KeyringStorage.keyringData.apiKeys["9router"] || KeyringStorage.keyringData.apiKeys["gemini"] || "") : "")
+				|| "";
+			const key = (aiCfg.apiKey && aiCfg.apiKey.trim().length > 0) ? aiCfg.apiKey.trim() : envKey;
 			return {
-				endpoint: "http://127.0.0.1:20128/v1/chat/completions",
-				model: aiCfg.model || "ag/claude-sonnet-4-6",
-				apiKey: aiCfg.apiKey || ""
+				endpoint: aiCfg.endpoint || "http://127.0.0.1:20128/v1/chat/completions",
+				model: aiCfg.model || "ag/gemini-3.7-flash-high",
+				apiKey: key
 			};
 		}
 		if (prov === "ollama") {
@@ -124,7 +130,7 @@ AbstractBackgroundWidget {
 		}
 		return {
 			endpoint: aiCfg.endpoint || "http://127.0.0.1:20128/v1/chat/completions",
-			model: aiCfg.model || "ag/claude-sonnet-4-6",
+			model: aiCfg.model || "ag/gemini-3.7-flash-high",
 			apiKey: aiCfg.apiKey || ""
 		};
 	}
@@ -871,24 +877,70 @@ AbstractBackgroundWidget {
 						Rectangle {
 							Layout.fillWidth: true
 							visible: content.length > 0
-							implicitHeight: messageText.implicitHeight + 16
+							implicitHeight: messageCol.implicitHeight + 16
 							radius: Appearance.rounding.normal
 							color: role === "user" ? Appearance.colors.colPrimary : Appearance.colors.colLayer1
 							border.width: role === "user" ? 0 : 1
 							border.color: Appearance.colors.colLayer0Border
 
-							StyledText {
-								id: messageText
+							ColumnLayout {
+								id: messageCol
 								anchors {
 									left: parent.left
 									right: parent.right
 									top: parent.top
 									margins: 10
 								}
-								font.pixelSize: Appearance.font.pixelSize.normal
-								color: role === "user" ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer0
-								wrapMode: Text.Wrap
-								text: content
+								spacing: 6
+
+								StyledText {
+									id: messageText
+									Layout.fillWidth: true
+									font.pixelSize: Appearance.font.pixelSize.normal
+									color: role === "user" ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer0
+									wrapMode: Text.Wrap
+									text: content
+								}
+
+								RowLayout {
+									Layout.fillWidth: true
+									spacing: 4
+
+									Item { Layout.fillWidth: true }
+
+									Rectangle {
+										implicitWidth: 24
+										implicitHeight: 24
+										radius: Appearance.rounding.small
+										color: copyMouseArea.containsMouse ? ColorUtils.transparentize(role === "user" ? Appearance.colors.colOnPrimary : Appearance.colors.colPrimary, 0.85) : "transparent"
+
+										MaterialSymbol {
+											anchors.centerIn: parent
+											iconSize: 15
+											color: role === "user" ? Appearance.colors.colOnPrimary : Appearance.colors.colSubtext
+											text: copyMouseArea.copied ? "check" : "content_copy"
+										}
+
+										MouseArea {
+											id: copyMouseArea
+											anchors.fill: parent
+											hoverEnabled: true
+											cursorShape: Qt.PointingHandCursor
+											property bool copied: false
+											Timer {
+												id: copyTimer
+												interval: 1500
+												repeat: false
+												onTriggered: copyMouseArea.copied = false
+											}
+											onClicked: {
+												Quickshell.clipboardText = messageDelegate.content;
+												copyMouseArea.copied = true;
+												copyTimer.restart();
+											}
+										}
+									}
+								}
 							}
 						}
 					}
@@ -947,6 +999,16 @@ AbstractBackgroundWidget {
 									inputArea.focus = false;
 									GlobalStates.desktopWidgetKeyboardFocus = false;
 								}
+							}
+						}
+
+						ToolbarPairedFab {
+							baseSize: 34
+							iconText: "content_paste"
+							onClicked: {
+								inputArea.text += (Quickshell.clipboardText || "");
+								inputArea.cursorPosition = inputArea.text.length;
+								inputArea.forceActiveFocus();
 							}
 						}
 
