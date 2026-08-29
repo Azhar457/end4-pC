@@ -18,6 +18,18 @@ Item {
     property bool showingProfile: false
     property bool isMinimal: Config.options.settings.style === "minimal"
 
+    function jumpToMatch(idx) {
+        SettingsSearchService.jumpTo(idx, root, pagesRepeater);
+    }
+
+    function nextMatch() {
+        SettingsSearchService.next(root, pagesRepeater);
+    }
+
+    function prevMatch() {
+        SettingsSearchService.prev(root, pagesRepeater);
+    }
+
     Connections {
         target: GlobalStates
         function onSettingsPageChanged() {
@@ -106,6 +118,7 @@ Item {
                 implicitWidth: navRail.expanded ? 195 : fab.baseSize
                 color: isMinimal ? "transparent" : Appearance.m3colors.m3surfaceContainerLow
                 radius: Appearance.rounding.normal
+                clip: true
 
                 Behavior on implicitWidth {
                     animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
@@ -113,98 +126,103 @@ Item {
 
                 NavigationRail {
                     id: navRail
-                    anchors { left: parent.left; top: parent.top; bottom: parent.bottom; leftMargin: 20 }
-                    spacing: 10
+                    anchors { left: parent.left; top: parent.top; bottom: parent.bottom; leftMargin: 16; topMargin: 6; bottomMargin: 6 }
+                    spacing: 2
                     expanded: root.width > 900
 
-                    RowLayout {
-                        visible: true
-                        spacing: 10
+                    Item {
+                        id: profileRowWrapper
                         Layout.fillWidth: true
-                        Layout.margins: isMinimal ? 0 : 5
-                        Layout.topMargin: 15
+                        Layout.preferredHeight: 48
+                        Layout.margins: isMinimal ? 0 : 4
+                        Layout.topMargin: 4
                         Layout.bottomMargin: isMinimal ? -30 : 0
-
-                        Rectangle {
-                            id: avatarRect
-                            width: 48
-                            height: 48
-                            radius: width / 2
-                            color: Appearance.colors.colPrimaryContainer
-
-                            Image {
-                                id: avatarImage
-                                anchors.fill: parent
-                                source: Config.options.profile.avatarPath !== "" 
-                                    ? "file://" + Config.options.profile.avatarPicture 
-                                    : "file:///home/" + (Quickshell.env("USER") ?? "user") + "/.face"
-                                sourceSize.width: avatarImage.width * 2
-                                sourceSize.height: avatarImage.height * 2
-                                fillMode: Image.PreserveAspectCrop
-                                layer.enabled: true
-                                layer.effect: OpacityMask {
-                                    maskSource: Rectangle {
-                                        width: avatarRect.width
-                                        height: avatarRect.height
-                                        radius: avatarRect.radius
-                                    }
-                                }
-                                onStatusChanged: {
-                                    if (status === Image.Error)
-                                        visible = false
-                                }
-                            }
-
-                            MaterialSymbol {
-                                anchors.centerIn: parent
-                                text: "account_circle"
-                                iconSize: 32
-                                color: Appearance.colors.colOnPrimaryContainer
-                                visible: avatarImage.status === Image.Error
-                            }
-                        }
-
-                        ColumnLayout {
-                            spacing: 2
-                            Layout.fillWidth: true
-                            visible: !isMinimal
-
-                            StyledText {
-                                text: Config.options.profile.displayName === "" ? SystemInfo.username : Config.options.profile.displayName
-                                font.pixelSize: Appearance.font.pixelSize.normal
-                                color: Appearance.colors.colOnLayer1
-                                font.weight: Font.Medium
-                                elide: Text.ElideRight
-                                Layout.maximumWidth: 100
-                            }
-
-                            StyledText {
-                                id: distroText
-                                font.pixelSize: Appearance.font.pixelSize.smaller
-                                color: Appearance.colors.colSubtext
-                                elide: Text.ElideRight
-                                Layout.maximumWidth: 100
-
-                                text: {
-                                    const d = Config.options.profile.descriptionText
-                                    if (d === "::uptime::") return Translation.tr("Up • %1").arg(DateTime.uptime)
-                                    return SystemInfo.distroName
-                                }
-                            }
-                        }
 
                         MouseArea {
                             anchors.fill: parent
                             cursorShape: Qt.PointingHandCursor
                             onClicked: root.showingProfile = !root.showingProfile
                         }
+
+                        RowLayout {
+                            anchors.fill: parent
+                            spacing: 8
+
+                            Rectangle {
+                                id: avatarRect
+                                width: 42
+                                height: 42
+                                radius: width / 2
+                                color: Appearance.colors.colPrimaryContainer
+
+                                Image {
+                                    id: avatarImage
+                                    anchors.fill: parent
+                                    source: Config.options.profile.avatarPath !== "" 
+                                        ? "file://" + Config.options.profile.avatarPicture 
+                                        : "file:///home/" + (Quickshell.env("USER") ?? "user") + "/.face"
+                                    sourceSize.width: avatarImage.width * 2
+                                    sourceSize.height: avatarImage.height * 2
+                                    fillMode: Image.PreserveAspectCrop
+                                    layer.enabled: true
+                                    layer.effect: OpacityMask {
+                                        maskSource: Rectangle {
+                                            width: avatarRect.width
+                                            height: avatarRect.height
+                                            radius: avatarRect.radius
+                                        }
+                                    }
+                                    onStatusChanged: {
+                                        if (status === Image.Error)
+                                            visible = false
+                                    }
+                                }
+
+                                MaterialSymbol {
+                                    anchors.centerIn: parent
+                                    text: "account_circle"
+                                    iconSize: 28
+                                    color: Appearance.colors.colOnPrimaryContainer
+                                    visible: avatarImage.status === Image.Error
+                                }
+                            }
+
+                            ColumnLayout {
+                                spacing: 1
+                                Layout.fillWidth: true
+                                visible: !isMinimal
+
+                                StyledText {
+                                    text: Config.options.profile.displayName === "" ? SystemInfo.username : Config.options.profile.displayName
+                                    font.pixelSize: Appearance.font.pixelSize.normal
+                                    color: Appearance.colors.colOnLayer1
+                                    font.weight: Font.Medium
+                                    elide: Text.ElideRight
+                                    Layout.maximumWidth: 100
+                                }
+
+                                StyledText {
+                                    id: distroText
+                                    font.pixelSize: Appearance.font.pixelSize.smaller
+                                    color: Appearance.colors.colSubtext
+                                    elide: Text.ElideRight
+                                    Layout.maximumWidth: 100
+
+                                    text: {
+                                        const d = Config.options.profile.descriptionText
+                                        if (d === "::uptime::") return Translation.tr("Up • %1").arg(DateTime.uptime)
+                                        return SystemInfo.distroName
+                                    }
+                                }
+                            }
+                        }
                     }
 
                     Rectangle {
                         Layout.preferredWidth: isMinimal ? 50 : 160
-                        Layout.topMargin: isMinimal ? 30 : -5
-                        Layout.bottomMargin: isMinimal ? -30 : 0
-                        height: 2
+                        Layout.topMargin: isMinimal ? 20 : 2
+                        Layout.bottomMargin: isMinimal ? -20 : 2
+                        height: 1
                         gradient: Gradient {
                             orientation: Gradient.Horizontal
                             GradientStop { position: 0.0; color: "transparent" }
@@ -218,7 +236,8 @@ Item {
                     FloatingActionButton {
                         id: fab
                         visible: !isMinimal
-                        Layout.bottomMargin: -25
+                        Layout.topMargin: 2
+                        Layout.bottomMargin: 2
                         property bool justCopied: false
                         iconText: justCopied ? "check" : "edit"
                         buttonText: justCopied ? Translation.tr("Path copied") : Translation.tr("Config file")
@@ -241,7 +260,103 @@ Item {
                         }
                     }
 
+                    Rectangle {
+                        visible: navRail.expanded && !isMinimal
+                        Layout.preferredWidth: 160
+                        Layout.preferredHeight: 30
+                        Layout.topMargin: 2
+                        Layout.bottomMargin: 4
+                        color: Appearance.colors.colLayer1
+                        radius: Appearance.rounding.full
+                        border.width: 1
+                        border.color: searchField.activeFocus ? Appearance.colors.colPrimary : "transparent"
+
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.leftMargin: 6
+                            anchors.rightMargin: 6
+                            spacing: 2
+
+                            MaterialSymbol {
+                                text: "search"
+                                iconSize: 14
+                                color: Appearance.colors.colSubtext
+                            }
+
+                            StyledTextInput {
+                                id: searchField
+                                Layout.fillWidth: true
+                                Layout.fillHeight: true
+                                verticalAlignment: TextInput.AlignVCenter
+                                clip: true
+                                font.pixelSize: Appearance.font.pixelSize.smaller
+                                Text {
+                                    text: Translation.tr("Search...")
+                                    visible: !searchField.text && !searchField.activeFocus
+                                    color: Appearance.colors.colSubtext
+                                    font: searchField.font
+                                    anchors.verticalCenter: parent.verticalCenter
+                                }
+                                onTextChanged: {
+                                    SettingsSearchService.search(text);
+                                    if (SettingsSearchService.searchMatches.length > 0) {
+                                        SettingsSearchService.jumpTo(0, root, pagesRepeater);
+                                    }
+                                }
+
+                                Keys.onReturnPressed: (event) => {
+                                    SettingsSearchService.next(root, pagesRepeater);
+                                    event.accepted = true;
+                                }
+                                Keys.onDownPressed: (event) => {
+                                    SettingsSearchService.next(root, pagesRepeater);
+                                    event.accepted = true;
+                                }
+                                Keys.onUpPressed: (event) => {
+                                    SettingsSearchService.prev(root, pagesRepeater);
+                                    event.accepted = true;
+                                }
+                            }
+
+                            StyledText {
+                                visible: searchField.text.length > 0
+                                text: SettingsSearchService.searchMatches.length > 0 ? `${SettingsSearchService.currentMatchIdx + 1}/${SettingsSearchService.searchMatches.length}` : "0/0"
+                                font.pixelSize: 10
+                                color: SettingsSearchService.searchMatches.length > 0 ? Appearance.colors.colSubtext : Appearance.colors.colError
+                            }
+
+                            MouseArea {
+                                visible: SettingsSearchService.searchMatches.length > 1
+                                implicitWidth: 14
+                                implicitHeight: 14
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: SettingsSearchService.prev(root, pagesRepeater)
+                                MaterialSymbol {
+                                    anchors.centerIn: parent
+                                    text: "keyboard_arrow_up"
+                                    iconSize: 14
+                                    color: Appearance.colors.colSubtext
+                                }
+                            }
+
+                            MouseArea {
+                                visible: SettingsSearchService.searchMatches.length > 1
+                                implicitWidth: 14
+                                implicitHeight: 14
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: SettingsSearchService.next(root, pagesRepeater)
+                                MaterialSymbol {
+                                    anchors.centerIn: parent
+                                    text: "keyboard_arrow_down"
+                                    iconSize: 14
+                                    color: Appearance.colors.colSubtext
+                                }
+                            }
+                        }
+                    }
+
                     NavigationRailTabArray {
+                        Layout.topMargin: 0
                         currentIndex: root.currentPage
                         expanded: navRail.expanded
                         colToggled: root.showingProfile ? "transparent" : Appearance.colors.colSecondaryContainer

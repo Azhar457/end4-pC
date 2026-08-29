@@ -33,7 +33,7 @@ Item {
     property int visualizerSmoothing: 2
     property real radius
 
-    property string displayedArtFilePath: root.downloaded ? Qt.resolvedUrl(artFilePath) : ""
+    property string displayedArtFilePath: (root.downloaded && root.artUrl && root.artUrl.length > 0) ? Qt.resolvedUrl(artFilePath) : ""
 
     Timer {
         running: root.player?.playbackState == MprisPlaybackState.Playing

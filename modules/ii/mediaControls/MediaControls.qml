@@ -91,7 +91,7 @@ Scope {
                 GlobalStates.visualizerPoints = [];
             }
         }
-        command: ["cava", "-p", `${FileUtils.trimFileProtocol(Directories.scriptPath)}/cava/raw_output_config.txt`]
+        command: ["bash", "-c", `command -v cava >/dev/null && exec cava -p '${FileUtils.trimFileProtocol(Directories.scriptPath)}/cava/raw_output_config.txt' || true`]
         stdout: SplitParser {
             onRead: data => {
                 let points = data.split(";").map(p => parseFloat(p.trim())).filter(p => !isNaN(p));

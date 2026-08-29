@@ -237,10 +237,18 @@ PanelWindow {
         stdout: StdioCollector {
             id: imageDimensionCollector
             onStreamFinished: {
-                imageRegions = RegionFunctions.filterImageRegions(
-                    JSON.parse(imageDimensionCollector.text),
-                    root.windowRegions
-                );
+                try {
+                    let trimmed = imageDimensionCollector.text.trim();
+                    if (trimmed.length > 0) {
+                        let parsed = JSON.parse(trimmed);
+                        imageRegions = RegionFunctions.filterImageRegions(
+                            parsed,
+                            root.windowRegions
+                        );
+                    }
+                } catch (e) {
+                    imageRegions = [];
+                }
             }
         }
     }

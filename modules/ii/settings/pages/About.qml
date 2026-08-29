@@ -17,8 +17,8 @@ ContentPage {
     function runSystemUpdate() {
         Quickshell.execDetached([
             "kitty", "--hold",
-            "fish", "-i", "-l", "-c",
-            "yay -Syu --combinedupgrade=false"
+            "bash", "-c",
+            "sudo dnf upgrade --refresh"
         ])
         Qt.callLater(() => GlobalStates.settingsOpen = false)
     }
@@ -30,7 +30,7 @@ ContentPage {
 
             # Download to temp first
             rm -rf "$DIR/end4-pC-tmp"
-            git clone https://github.com/pctrade/end4-pC.git "$DIR/end4-pC-tmp"
+            git clone https://github.com/Azhar457/end4-pC.git "$DIR/end4-pC-tmp"
 
             # Apply update
             rm -rf "$DIR/end4-pC-old"
@@ -79,7 +79,7 @@ ContentPage {
                     anchors.centerIn: parent
                     implicitWidth: 72
                     implicitHeight: 72
-                    source: Quickshell.iconPath(SystemInfo.logo)
+                    source: "file://" + Directories.assetsPath + "/icons/" + (SystemInfo.distroIcon || "fedora-symbolic") + ".svg"
                 }
             }
 
@@ -134,9 +134,7 @@ ContentPage {
                 }
             }
             RowLayout {
-                anchors.bottom: parent.bottom
-                anchors.right: parent.right
-                anchors.margins: 0
+                Layout.alignment: Qt.AlignBottom | Qt.AlignRight
                 spacing: 8
                 RippleButton {
                     buttonText: Translation.tr("Update Dots")

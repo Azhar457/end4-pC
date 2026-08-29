@@ -8,6 +8,7 @@ import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
 import qs.modules.common.functions
+import qs.modules.common.functions as CF
 import qs.modules.common.panels.lock
 import qs.modules.ii.bar as Bar
 import Quickshell
@@ -113,24 +114,40 @@ MouseArea {
     Loader {
         anchors.fill: parent
         z: -1
-        active: WM.compositor === "niri"
+        active: true
 
         sourceComponent: Item {
             anchors.fill: parent
 
+            Rectangle {
+                anchors.fill: parent
+                color: Appearance.colors.colLayer0
+            }
+
             Image {
                 id: lockBgSource
                 anchors.fill: parent
-                source: Config.options.background.wallpaperPath
+                source: {
+                    let wp = (Config.options.background.lockWall && Config.options.background.lockWall.length > 0)
+                        ? Config.options.background.lockWall
+                        : Config.options.background.wallpaperPath;
+                    if (!wp) return "";
+                    return wp.startsWith("file://") ? wp : ("file://" + wp);
+                }
                 fillMode: Image.PreserveAspectCrop
                 asynchronous: true
                 cache: true
-                visible: false
+                visible: !(Config.options.lock.blur.enable ?? false)
             }
             FastBlur {
                 anchors.fill: parent
+                visible: Config.options.lock.blur.enable ?? false
                 source: lockBgSource
-                radius: 0 // fixme
+                radius: Config.options.lock.blur.radius || 32
+            }
+            Rectangle {
+                anchors.fill: parent
+                color: CF.ColorUtils.transparentize(Appearance.colors.colLayer0, 0.4)
             }
         }
     }

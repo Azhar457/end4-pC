@@ -541,8 +541,8 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
                                 root.suggestionList = modelResults.map(model => {
                                     return {
                                         name: `${messageInputField.text.trim().split(" ").length == 1 ? (root.commandPrefix + "model ") : ""}${model.target}`,
-                                        displayName: `${Ai.models[model.target].name}`,
-                                        description: `${Ai.models[model.target].description}`
+                                        displayName: `${Ai.models[model.target]?.name ?? model.target}`,
+                                        description: `${Ai.models[model.target]?.description ?? ""}`
                                     };
                                 });
                             } else if (messageInputField.text.startsWith(`${root.commandPrefix}prompt`)) {

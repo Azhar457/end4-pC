@@ -42,8 +42,8 @@ MouseArea {
         id: updateProc
         command: [
             "kitty", "--hold",
-            "fish", "-i", "-l", "-c",
-            "yay -Syu --combinedupgrade=false"
+            "bash", "-c",
+            "sudo dnf upgrade --refresh"
         ]
         onExited: (exitCode, exitStatus) => {
             Updates.refresh()

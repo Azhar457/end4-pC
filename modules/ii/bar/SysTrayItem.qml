@@ -27,11 +27,14 @@ MouseArea {
             item.activate();
             break;
         case Qt.RightButton:
-            if (item.hasMenu)
+            if (item.hasMenu) {
                 if (menu.active && menu.item && typeof menu.item.close === "function")
                     menu.item.close();
                 else 
                     menu.open();
+            } else {
+                item.contextMenu(event.x, event.y);
+            }
             break;
         }
         event.accepted = true;

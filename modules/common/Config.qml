@@ -83,10 +83,11 @@ Singleton {
             property JsonObject policies: JsonObject {
                 property int ai: 1 // 0: No | 1: Yes | 2: Local
                 property int weeb: 1 // 0: No | 1: Open | 2: Closet
+                property int aiApproval: 1 // 0: Deny all | 1: Agent decide (high-risk asks) | 2: Auto-approve (run_command still asks)
             }
 
             property JsonObject ai: JsonObject {
-                property string systemPrompt: "## Style\n- Use casual tone, don't be formal!\n- Always be brief and to the point, unless asked otherwise\n- Don't repeat the user's question\n- Be approachable: Avoid using overly complicated, domain-specific terms and provide analogies when asked to explain a concept\n\n## Context (ignore when irrelevant)\n- You are a helpful and inspiring sidebar assistant on a {DISTRO} Linux system\n- Desktop environment: {DE}\n- Current date & time: {DATETIME}\n- Focused app: {WINDOWCLASS}\n\n## Presentation\n- Use Markdown features in your response: \n  - **Bold** text to **highlight keywords** in your response\n  - **Split long information into small sections** with h2 headers and a relevant emoji at the start of it (for example `## 🐧 Linux`). Bullet points are preferred over long paragraphs, unless you're offering writing support or instructed otherwise by the user.\n- Asked to compare different options? You should firstly use a table to compare the main aspects, then elaborate or include relevant comments from online forums *after* the table. Make sure to provide a final recommendation for the user's use case!\n- Use LaTeX formatting for mathematical and scientific notations whenever appropriate. Enclose all LaTeX '$$' delimiters. NEVER generate LaTeX code in a latex block unless the user explicitly asks for it. DO NOT use LaTeX for regular documents (resumes, letters, essays, CVs, etc.).\n\nThanks!\n"
+                property string systemPrompt: "## Style\n- Use casual tone, don't be formal!\n- Always be brief and to the point, unless asked otherwise\n- Don't repeat the user's question\n- Be approachable: Avoid using overly complicated, domain-specific terms and provide analogies when asked to explain a concept\n\n## Context (ignore when irrelevant)\n- You are a helpful and inspiring sidebar assistant on a {DISTRO} Linux system\n- Desktop environment: {DE}\n- Current date & time: {DATETIME}\n- Focused app: {WINDOWCLASS}\n\n## Presentation\n- Use Markdown features in your response: \n  - **Bold** text to **highlight keywords** in your response\n  - **Split long information into small sections** with h2 headers and a relevant emoji at the start of it (for example `## 🐧 Linux`). Bullet points are preferred over long paragraphs, unless you're offering writing support or instructed otherwise by the user.\n- Asked to compare different options? You should firstly use a table to compare the main aspects, then elaborate or include relevant comments from online forums *after* the table. Make sure to provide a final recommendation for the user's use case!\n- Use LaTeX formatting for mathematical and scientific notations whenever appropriate. Enclose all LaTeX '$$' delimiters. NEVER generate LaTeX code in a latex block unless the user explicitly asks for it. DO NOT use LaTeX for regular documents (resumes, letters, essays, CVs, etc.).\n\n## Agent mode\n- When tool use is enabled you can call: web_search, web_fetch, read_file, run_command.\n- Before calling run_command, self-assess its risk and set the risk field honestly ('high' if it writes/deletes files, changes system config, installs packages, or requires sudo).\n- Prefer read_file over run_command for inspection. Chain as few commands as possible.\n- This shell config lives at ~/.config/quickshell/end4-pc — a Fedora 44 fork of end-4/dots-hyprland. Quickshell (Qt6/QML) Material 3 shell. Scripts in scripts/, services in services/, config defaults in modules/common/Config.qml. Logs: /run/user/1000/quickshell/by-id/*/log.qslog. Deploy workflow: edit repo then rsync to the live path.\n- Desktop support: Hyprland (Wayland, primary) and Niri (Wayland) via NiriBackend/HyprlandBackend services. GNOME/KDE/X11 are NOT the target — do not suggest gsettings/plasma/x11-specific fixes; prefer Wayland-native tools (grim, slurp, hyprctl, niri msg).\n\nThanks!\n"
                 property string tool: "functions" // search, functions, or none
                 property list<var> extraModels: [
                     {
@@ -209,7 +210,7 @@ Singleton {
                 property string networkEthernet: "kcmshell6 kcm_networkmanagement"
                 property string taskManager: "plasma-systemmonitor --page-name Processes"
                 property string terminal: "kitty -1" // This is only for shell actions
-                property string update: "kitty -1 --hold=yes fish -i -c 'pkexec pacman -Syu'"
+                property string update: "kitty -1 --hold=yes bash -c 'sudo dnf upgrade --refresh'"
                 property string volumeMixer: `~/.config/hypr/hyprland/scripts/launch_first_available.sh "pavucontrol-qt" "pavucontrol"`
             }
 
@@ -339,6 +340,27 @@ Singleton {
                         property string path: ""
                         property string shape: "Cookie4Sided"
                         property real size: 200
+                    }
+
+                    property JsonObject translator: JsonObject {
+                        property bool enable: false
+                        property string placementStrategy: "free"
+                        property real x: 400
+                        property real y: 100
+                    }
+
+                    property JsonObject aiAgent: JsonObject {
+                        property bool enable: true
+                        property string placementStrategy: "free"
+                        property real x: 80
+                        property real y: 350
+                        property real width: 460
+                        property real height: 540
+                        property string provider: "9router"
+                        property string model: "ag/claude-sonnet-4-6"
+                        property string endpoint: "http://127.0.0.1:20128/v1/chat/completions"
+                        property string apiKey: ""
+                        property bool confirmTools: true
                     }
 
                     property JsonObject resources: JsonObject {

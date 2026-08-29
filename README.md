@@ -1,120 +1,88 @@
-
-
-
-
 <div align="center">
 
-# 💠 end4-pC
+# 💠 end4-pC (Fedora 44 Hyprland Edition)
 
-**A personal fork of [illogical-impulse](https://github.com/end-4/dots-hyprland) by [@end-4](https://github.com/end-4)**  
-Customized and maintained by **pctrade**
+**A tailored, rock-solid fork of [end4-pC](https://github.com/pctrade/end4-pC) & [illogical-impulse](https://github.com/end-4/dots-hyprland) optimized natively for Fedora 44 Linux.**  
+Maintained and enhanced by **[@Azhar457](https://github.com/Azhar457)**
 
-[English](README.md) | [简体中文](README.zh-CN.md) | [日本語](README.ja.md)
-
-</div>
-
----
-
-## 🎬 Showcase
-
-<p align="center">
-  <a href="https://www.youtube.com/watch?v=o0Vsh7eVchs">
-    <img src="https://img.youtube.com/vi/o0Vsh7eVchs/maxresdefault.jpg" alt="Material 3 Expressive x Linux" width="85%" style="border-radius: 12px; box-shadow: 0px 10px 30px rgba(0,0,0,0.5);"/>
-  </a>
-</p>
+[![Fedora 44](https://img.shields.io/badge/Fedora-44%20Rawhide%2FWorkstation-51A2DA?logo=fedora&logoColor=white)](#)
+[![Hyprland](https://img.shields.io/badge/Hyprland-Wayland%20Compositor-00ADD8?logo=wayland&logoColor=white)](#)
+[![Quickshell](https://img.shields.io/badge/Quickshell-Material%203%20Qt6-41CD52?logo=qt&logoColor=white)](#)
+[![9Router Plinian](https://img.shields.io/badge/AI%20Gateway-9Router%20Plinian-FF6F00)](#)
 
 </div>
 
 ---
 
-## 📸 Screenshots
-<div align="center">
+## 🌟 Highlights & Fedora 44 Enhancements
 
-| 🎵 Lyrics | 🖼️ Online Wallpapers |
-|:---:|:---:|
-| ![Screenshot 1](screenshots/1.png) | ![Screenshot 2](screenshots/2.png) |
-| 🪟 Desktop Widgets | 🔧 Hyprland Configs |
-| ![Screenshot 5](screenshots/5.png) | ![Screenshot 6](screenshots/6.png) |
-| ⚙️ Configurable Bar | ✨ And More |
-| ![Screenshot 3](screenshots/3.png) | ![Screenshot 4](screenshots/4.png) |
+Unlike upstream configurations designed exclusively for Arch Linux / AUR, this fork solves all Fedora compatibility hurdles while enhancing UX and system modularity:
 
-</div>
+* 🐧 **Native Fedora Package Management**: Integrated universal updater that queries `dnf` natively instead of failing on Arch's `checkupdates`.
+* 🎨 **Material You & Matugen Integration**: Standalone `matugen` 4.2.0 integration and Python `materialyoucolor` runtime isolation for 100% reliable Light/Dark theme switching.
+* 🎯 **Native Wayland Color Eyedropper**: Built-in `grim` + `slurp` + `PIL` color-picker bridge for real-time wallpaper accent selection.
+* 🔍 **Dedicated Search Engine Singleton (`SettingsSearchService.qml`)**: Clean architectural separation of settings indexing from UI rendering, supporting deep-link jump, result counters, and glowing pulse highlights.
+* 📐 **Fluid & Responsive Layout**: Fluid anchor layouts preventing right-side clipping on small or wide screens.
+* 🤖 **AI Gateway Ready**: Seamless native bridge for `9router-plinian` and `Hermes Desktop`.
 
 ---
 
-## ⚡ Installation
+## ⚡ Quick Installation (Fedora 44)
 
-> [!NOTE]
-> This fork manages its own configuration folder independently — it does **not** overwrite or modify any existing setup. However, it does require [illogical-impulse](https://github.com/end-4/dots-hyprland) to be installed and running.
-
+### 1. Prerequisites
+Ensure required packages and Python libraries are available:
 ```bash
-cd ~/.config/quickshell/
-git clone https://github.com/pctrade/end4-pC.git
+# Core tools
+sudo dnf install -y hyprland quickshell grim slurp ImageMagick jq python3 python3-pip
+
+# Material You virtualenv setup
+python3 -m venv ~/.local/state/quickshell/.venv
+~/.local/state/quickshell/.venv/bin/pip install materialyoucolor Pillow
+```
+
+### 2. Clone & Run
+```bash
+git clone https://github.com/Azhar457/end4-pC.git ~/.config/quickshell/end4-pC
 killall qs 2>/dev/null; qs -c end4-pC > /dev/null 2>&1 & disown
 ```
 
-### 🔧 Set as your default shell (optional)
+---
 
-If you like it and want it to load by default instead of `ii`, edit:
+## 🛠️ Development & Deployment Workflow
+
+This repository includes a dedicated hot-swapping tool (`deploy.py`) inspired by modern dev-lab toolkits:
 
 ```bash
-~/.config/hypr/hyprland/variables.lua
+# 1. Deploy current working tree to live ~/.config/quickshell/end4-pC (with automatic timestamped backup)
+python3 deploy.py
+
+# 2. Instant Rollback if anything breaks
+python3 deploy.py --restore
+
+# 3. Inspect incoming upstream changes safely before merging
+python3 deploy.py --diff-upstream
+
+# 4. Check repo & live status
+python3 deploy.py --status
 ```
-
-And change this line:
-
-```lua
-hl.env("qsConfig", "ii")
-```
-
-to:
-
-```lua
-hl.env("qsConfig", "end4-pC")
-```
-
-> [!TIP]
-> After saving, restart Hyprland or run `hyprctl reload` to apply the change.
 
 ---
 
-### ⚙️ Settings keybind
+## 🤝 Upstream Provenance & Sync Strategy
 
-To open the settings panel, add this to your Hyprland config:
+This project maintains clean dual-remotes:
+* **`origin`**: Your custom fork (`git@github.com:Azhar457/end4-pC.git`)
+* **`upstream`**: Official repository (`https://github.com/pctrade/end4-pC.git`)
 
-```lua
-hl.bind("SUPER + escape", hl.dsp.global("quickshell:settingsToggle"), {description = "Toggle settings"})
+To sync with upstream updates without losing Fedora patches:
+```bash
+git fetch upstream
+git merge upstream/main
+python3 deploy.py
 ```
-
-> **Note:** Settings is an overlay panel, not a regular window — `Super + Q` won't close it. Use the same keybind to toggle it or press `Escape`.
-
----
-
-## ❓ FAQ
-
-### How do I see my keybinds?
-
-Open the launcher (`SUPER`) and type `<` — it'll show you the full list of configured keybinds.
-
-### Why doesn't Settings have a search bar?
-
-It doesn't need one — the launcher already does that job. Open the launcher (`SUPER`) and just type what you're looking for (e.g. `wallpaper`, `bar`, `blur`); it'll match against page names and section keywords and jump you straight to the right Settings page, so there's no need for a separate search inside Settings itself.
-
----
-
-## 🙏 Credits
-
-Huge thanks to the people who made this possible:
-
-- **[@end-4](https://github.com/end-4)** — for creating the original [dots-hyprland](https://github.com/end-4/dots-hyprland) / illogical-impulse shell. An absolute masterpiece of a dotfiles project 🫡
-- **[@gh0stzk](https://github.com/gh0stzk)** — for providing the weather API integration that made the weather widget possible 🙌
-- **[@StarS2112](https://github.com/StarS2112)** — for showcasing this fork 🙌
-- **[@simeulinuxkaliaiwr](https://github.com/simeulinuxkaliaiwr)** — for some shader transitions 🎨
 
 ---
 
 <div align="center">
-
-Made with ❤️ — feel free to fork and make it your own
-
+  <sub>Engineered with precision for Fedora Linux 44. Based on the incredible work of @end-4 and @pctrade.</sub>
 </div>

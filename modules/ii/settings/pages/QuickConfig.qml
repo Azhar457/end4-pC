@@ -22,7 +22,10 @@ ContentPage {
         function findTarget(rootItem) {
             for (let i = 0; i < rootItem.children.length; i++) {
                 let child = rootItem.children[i]
-                if (child.title && child.title.toLowerCase().includes(t)) return child
+                if ((child.title && child.title.toLowerCase().includes(t)) ||
+                    (child.text && child.text.toLowerCase().includes(t)) ||
+                    (child.displayName && child.displayName.toLowerCase().includes(t)) ||
+                    (child.name && child.name.toLowerCase().includes(t))) return child
             }
             for (let i = 0; i < rootItem.children.length; i++) {
                 let found = findTarget(rootItem.children[i])
@@ -33,7 +36,8 @@ ContentPage {
         let target = findTarget(mainLayout)
         if (target) {
             let pos = target.mapToItem(mainLayout, 0, 0)
-            page.contentY = Math.max(0, pos.y - 0)
+            page.contentY = Math.max(0, pos.y - 20)
+            page.highlightItem(target)
         }
     }
 
@@ -46,17 +50,21 @@ ContentPage {
         Layout.fillHeight: true
         toggled: Appearance.m3colors.darkmode === dark
         colBackground: Appearance.colors.colLayer2
+        colBackgroundToggled: Appearance.colors.colPrimary
         onClicked: {
             Quickshell.execDetached(["bash", "-c", `${Directories.wallpaperSwitchScriptPath} --mode ${dark ? "dark" : "light"} --noswitch`]);
         }
         contentItem: Item {
             anchors.centerIn: parent
+            implicitWidth: btnCol.implicitWidth
+            implicitHeight: btnCol.implicitHeight
             ColumnLayout {
+                id: btnCol
                 anchors.centerIn: parent
-                spacing: 0
+                spacing: 2
                 MaterialSymbol {
                     Layout.alignment: Qt.AlignHCenter
-                    iconSize: 30
+                    iconSize: 26
                     text: dark ? "dark_mode" : "light_mode"
                     color: smallLightDarkPreferenceButton.colText
                 }
@@ -64,6 +72,7 @@ ContentPage {
                     Layout.alignment: Qt.AlignHCenter
                     text: dark ? Translation.tr("Dark") : Translation.tr("Light")
                     font.pixelSize: Appearance.font.pixelSize.smaller
+                    font.weight: Font.Medium
                     color: smallLightDarkPreferenceButton.colText
                 }
             }
@@ -73,7 +82,6 @@ ContentPage {
     ColumnLayout {
         id: mainLayout
         Layout.fillWidth: true
-        Layout.fillHeight: true
         spacing: 16
 
         ContentSection {
@@ -176,7 +184,7 @@ ContentPage {
                                     anchors.margins: 8
                                     text: modelData.icon
                                     iconSize: Appearance.font.pixelSize.larger
-                                    color: parent.isSelected ? Appearance.colors.colOnPrimary : Appearance.colors.colOnPrimaryContainer
+                                    color: parent.isSelected ? Appearance.colors.colOnPrimary : Appearance.colors.colOnSecondaryContainer
                                 }
 
                                 StyledText {
@@ -186,7 +194,7 @@ ContentPage {
                                     text: modelData.displayName
                                     font.pixelSize: Appearance.font.pixelSize.smaller
                                     font.weight: Font.Medium
-                                    color: parent.isSelected ? Appearance.colors.colOnPrimary : Appearance.colors.colOnPrimaryContainer
+                                    color: parent.isSelected ? Appearance.colors.colOnPrimary : Appearance.colors.colOnSecondaryContainer
                                 }
 
                                 MouseArea {

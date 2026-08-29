@@ -69,23 +69,7 @@ Scope {
                 property bool cutOutCornerOpenZones: (monitorHasFullscreen && monitorHasSpecialOpen) && (Config.options.bar.bottom === Config.options.sidebar.cornerOpen.bottom)
                 property int cornerOpenCutWidth: cutOutCornerOpenZones ? Config.options.sidebar.cornerOpen.cornerRegionWidth : 0
                 property int cornerOpenCutHeight: cutOutCornerOpenZones ? Config.options.sidebar.cornerOpen.cornerRegionHeight : 0
-                mask: Region {
-                    item: hoverMaskRegion
-                    Region {
-                        intersection: Intersection.Subtract
-                        x: 0
-                        y: Config.options.bar.bottom ? (barRoot.height - barRoot.cornerOpenCutHeight) : 0
-                        width: barRoot.cornerOpenCutWidth
-                        height: barRoot.cornerOpenCutHeight
-                    }
-                    Region {
-                        intersection: Intersection.Subtract
-                        x: barRoot.width - barRoot.cornerOpenCutWidth
-                        y: Config.options.bar.bottom ? (barRoot.height - barRoot.cornerOpenCutHeight) : 0
-                        width: barRoot.cornerOpenCutWidth
-                        height: barRoot.cornerOpenCutHeight
-                    }
-                }
+
                 color: "transparent"
 
                 // Positioning
@@ -97,9 +81,9 @@ Scope {
                 }
 
                 margins {
-                    top: Config.options.bar.cornerStyle === 3 ? 5 : 0
+                    top: 0
                     right: (Config.options.interactions.deadPixelWorkaround.enable && barRoot.anchors.right) * -1
-                    bottom: (Config.options.interactions.deadPixelWorkaround.enable && barRoot.anchors.bottom) * -1 || Config.options.bar.cornerStyle === 3 ? 5 : 0
+                    bottom: (Config.options.interactions.deadPixelWorkaround.enable && barRoot.anchors.bottom) * -1
                 }
 
                 // Include in focus grab
@@ -115,8 +99,9 @@ Scope {
                     hoverEnabled: true
                     anchors {
                         fill: parent
+                        topMargin: Config.options.bar.cornerStyle === 3 && !Config.options.bar.bottom ? 5 : 0
+                        bottomMargin: (Config.options.bar.cornerStyle === 3 && Config.options.bar.bottom ? 5 : 0) + (Config.options.interactions.deadPixelWorkaround.enable && barRoot.anchors.bottom) * 1
                         rightMargin: (Config.options.interactions.deadPixelWorkaround.enable && barRoot.anchors.right) * 1
-                        bottomMargin: (Config.options.interactions.deadPixelWorkaround.enable && barRoot.anchors.bottom) * 1
                     }
 
                     Item {

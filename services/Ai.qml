@@ -23,6 +23,7 @@ Singleton {
     property Component geminiApiStrategy: GeminiApiStrategy {}
     property Component openaiApiStrategy: OpenAiApiStrategy {}
     property Component mistralApiStrategy: MistralApiStrategy {}
+    property Component hermesApiStrategy: HermesApiStrategy {}
     readonly property string interfaceRole: "interface"
     readonly property string apiKeyEnvVarName: "API_KEY"
 
@@ -233,9 +234,14 @@ Singleton {
             ],
             "search": [],
             "none": [],
+        },
+        "hermes": {
+            "functions": [],
+            "search": [],
+            "none": [],
         }
     }
-    property list<var> availableTools: Object.keys(root.tools[models[currentModelId]?.api_format])
+    property list<var> availableTools: Object.keys(root.tools[models[currentModelId]?.api_format] ?? {})
     property var toolDescriptions: {
         "functions": Translation.tr("Commands, edit configs, search.\nTakes an extra turn to switch to search mode if that's needed"),
         "search": Translation.tr("Gives the model search capabilities (immediately)"),
@@ -255,6 +261,17 @@ Singleton {
     // - api_format: The API format of the model. Can be "openai" or "gemini". Default is "openai".
     // - extraParams: Extra parameters to be passed to the model. This is a JSON object.
     property var models: Config.options.policies.ai === 2 ? {} : {
+        "hermes-agent": aiModelComponent.createObject(this, {
+            "name": "Hermes Agent (Native CLI)",
+            "icon": "spark-symbolic",
+            "description": Translation.tr("Local / CLI | Nous Hermes Agent\nNative execution with tools, terminal, filesystem, and skills."),
+            "homepage": "https://hermes-agent.nousresearch.com",
+            "endpoint": "hermes-cli",
+            "model": "hermes-agent",
+            "requires_key": false,
+            "key_id": "hermes",
+            "api_format": "hermes",
+        }),
         "gemini-2.5-flash": aiModelComponent.createObject(this, {
             "name": "Gemini 2.5 Flash",
             "icon": "google-gemini-symbolic",
@@ -296,12 +313,16 @@ Singleton {
         }),
     }
     property var modelList: Object.keys(root.models)
-    property var currentModelId: Persistent.states?.ai?.model || modelList[0]
+    property var currentModelId: {
+        const saved = Persistent.states?.ai?.model;
+        return (saved && modelList.indexOf(saved) !== -1) ? saved : modelList[0];
+    }
 
     property var apiStrategies: {
         "openai": openaiApiStrategy.createObject(this),
         "gemini": geminiApiStrategy.createObject(this),
         "mistral": mistralApiStrategy.createObject(this),
+        "hermes": hermesApiStrategy.createObject(this),
     }
     property ApiStrategy currentApiStrategy: apiStrategies[models[currentModelId]?.api_format || "openai"]
 
@@ -326,6 +347,7 @@ Singleton {
     Component.onCompleted: {
         setModel(currentModelId, false, false); // Do necessary setup for model
         root.addUserModels() // Config onReadyChanged above might not fire if config is loaded before this service
+        Qt.callLater(() => root.loadChat("lastSession")) // Defer until Directories ready
     }
 
     function guessModelLogo(model) {
@@ -364,7 +386,7 @@ Singleton {
                 try {
                     if (data.length === 0) return;
                     const dataJson = JSON.parse(data);
-                    root.modelList = [...root.modelList, ...dataJson];
+                    root.modelList = Object.keys(root.models);
                     dataJson.forEach(model => {
                         const safeModelName = root.safeModelName(model);
                         root.addModel(safeModelName, {
@@ -517,7 +539,7 @@ Singleton {
         Config.options.ai.tool = tool;
         return true;
     }
-    
+
     function getTemperature() {
         return root.temperature;
     }

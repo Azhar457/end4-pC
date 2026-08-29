@@ -22,13 +22,14 @@ Singleton {
     property bool wifiConnecting: connectProc.running
     property WifiAccessPoint wifiConnectTarget
     readonly property list<WifiAccessPoint> wifiNetworks: []
-    readonly property WifiAccessPoint active: wifiNetworks.find(n => n.active) ?? null
-    readonly property list<var> friendlyWifiNetworks: [...wifiNetworks].sort((a, b) => {
-        if (a.active && !b.active)
-            return -1;
-        if (!a.active && b.active)
-            return 1;
-        return b.strength - a.strength;
+    readonly property WifiAccessPoint active: wifiNetworks.find(n => n && n.active) ?? null
+    readonly property list<var> friendlyWifiNetworks: [...wifiNetworks].filter(n => n !== null).sort((a, b) => {
+        if (a && b) {
+            if (a.active && !b.active) return -1;
+            if (!a.active && b.active) return 1;
+            return (b.strength || 0) - (a.strength || 0);
+        }
+        return 0;
     })
     property string wifiStatus: "disconnected"
 
@@ -362,12 +363,16 @@ Singleton {
 
                 const rNetworks = root.wifiNetworks;
 
-                const destroyed = rNetworks.filter(rn => !wifiNetworks.find(n => n.frequency === rn.frequency && n.ssid === rn.ssid && n.bssid === rn.bssid));
-                for (const network of destroyed)
-                    rNetworks.splice(rNetworks.indexOf(network), 1).forEach(n => n.destroy());
+                const destroyed = rNetworks.filter(rn => rn && !wifiNetworks.find(n => n && rn && n.frequency === rn.frequency && n.ssid === rn.ssid && n.bssid === rn.bssid));
+                for (const network of destroyed) {
+                    if (network) {
+                        rNetworks.splice(rNetworks.indexOf(network), 1).forEach(n => { if (n) n.destroy(); });
+                    }
+                }
 
                 for (const network of wifiNetworks) {
-                    const match = rNetworks.find(n => n.frequency === network.frequency && n.ssid === network.ssid && n.bssid === network.bssid);
+                    if (!network) continue;
+                    const match = rNetworks.find(n => n && network && n.frequency === network.frequency && n.ssid === network.ssid && n.bssid === network.bssid);
                     if (match) {
                         match.lastIpcObject = network;
                     } else {

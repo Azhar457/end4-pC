@@ -78,8 +78,8 @@ Scope {
 
         Rectangle {
             id: settingsWindow
-            width: Config.options.settings.style === "minimal" ? Math.min(parent.width - 70, 980 * sizeScale) : Math.min(parent.width - 80, 980 * sizeScale)
-            height: Math.min(parent.height - 80, 665 * sizeScale)
+            width: Math.min(parent.width - 60, Math.max(900, Math.round(parent.width * 0.72)))
+            height: Math.min(parent.height - 60, Math.max(680, Math.round(parent.height * 0.82)))
             color: Appearance.colors.colLayer0
             border.width: Config.options.settings.borderSize
             border.color: Appearance.getColorFromName(Config.options.settings.borderColor)

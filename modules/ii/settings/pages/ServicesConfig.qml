@@ -16,7 +16,10 @@ ContentPage {
         function findTarget(rootItem) {
             for (let i = 0; i < rootItem.children.length; i++) {
                 let child = rootItem.children[i]
-                if (child.title && child.title.toLowerCase().includes(t)) {
+                if ((child.title && child.title.toLowerCase().includes(t)) ||
+                    (child.text && child.text.toLowerCase().includes(t)) ||
+                    (child.displayName && child.displayName.toLowerCase().includes(t)) ||
+                    (child.name && child.name.toLowerCase().includes(t))) {
                     return child
                 }
             }
@@ -31,7 +34,8 @@ ContentPage {
         let target = findTarget(mainLayout)
         if (target) {
             let pos = target.mapToItem(mainLayout, 0, 0)
-            page.contentY = Math.max(0, pos.y - 0)
+            page.contentY = Math.max(0, pos.y - 20)
+            page.highlightItem(target)
         }
     }
 
@@ -302,7 +306,7 @@ ContentPage {
 
         ContentSection {
             icon: "deployed_code_update"
-            title: Translation.tr("System updates (Arch only)")
+            title: Translation.tr("System updates")
 
             GroupedList {
                 ConfigSwitch {

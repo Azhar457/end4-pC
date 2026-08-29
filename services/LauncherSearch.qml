@@ -248,8 +248,9 @@ Singleton {
         id: mathProc
         property list<string> baseCommand: ["qalc", "-t"]
         function calculateExpression(expression) {
+            if (!expression || expression.trim().length === 0) return;
             mathProc.running = false;
-            mathProc.command = baseCommand.concat(expression);
+            mathProc.command = ["bash", "-c", `command -v qalc >/dev/null && exec qalc -t "${expression}" || true`];
             mathProc.running = true;
         }
         stdout: SplitParser {

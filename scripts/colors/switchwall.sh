@@ -1,5 +1,4 @@
-#!/usr/bin/env bash
-
+export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
 QUICKSHELL_CONFIG_NAME="ii"
 XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
@@ -87,13 +86,13 @@ check_and_prompt_upscale() {
                     action2=$(notify-send \
                         -a "Wallpaper switcher" \
                         -c "im.error" \
-                        -A "install_upscayl=Install Upscayl (Arch)" \
+                        -A "install_upscayl=Install Upscayl" \
                         "Install Upscayl?" \
-                        "yay -S upscayl-bin")
+                        "flatpak install flathub org.upscayl.Upscayl")
                     if [[ "$action2" == "install_upscayl" ]]; then
-                        kitty -1 yay -S upscayl-bin
-                        if command -v upscayl &>/dev/null; then
-                            nohup upscayl > /dev/null 2>&1 &
+                        kitty -1 flatpak install -y flathub org.upscayl.Upscayl
+                        if command -v upscayl &>/dev/null || flatpak info org.upscayl.Upscayl &>/dev/null; then
+                            flatpak run org.upscayl.Upscayl > /dev/null 2>&1 &
                         fi
                     fi
                 fi
@@ -212,15 +211,22 @@ switch() {
             fi
             if [ ${#missing_deps[@]} -gt 0 ]; then
                 echo "Missing deps: ${missing_deps[*]}"
-                echo "Arch: sudo pacman -S ${missing_deps[*]}"
+                local install_cmd="sudo dnf install -y ${missing_deps[*]}"
+                if command -v dnf5 &>/dev/null || command -v dnf &>/dev/null; then
+                    install_cmd="sudo dnf install -y ${missing_deps[*]}"
+                elif command -v apt &>/dev/null; then
+                    install_cmd="sudo apt install -y ${missing_deps[*]}"
+                elif command -v pacman &>/dev/null; then
+                    install_cmd="sudo pacman -S --noconfirm ${missing_deps[*]}"
+                fi
                 action=$(notify-send \
                     -a "Wallpaper switcher" \
                     -c "im.error" \
-                    -A "install_arch=Install (Arch)" \
+                    -A "install_deps=Install Dependencies" \
                     "Can't switch to video wallpaper" \
                     "Missing dependencies: ${missing_deps[*]}")
-                if [[ "$action" == "install_arch" ]]; then
-                    kitty -1 sudo pacman -S "${missing_deps[*]}"
+                if [[ "$action" == "install_deps" ]]; then
+                    kitty -1 bash -c "$install_cmd"
                     if command -v mpvpaper &>/dev/null && command -v ffmpeg &>/dev/null; then
                         notify-send 'Wallpaper switcher' 'Alright, try again!' -a "Wallpaper switcher"
                     fi
@@ -412,7 +418,14 @@ main() {
                     set_accent_color ""
                     shift 2
                 else
-                    set_accent_color $(hyprpicker --no-fancy)
+                    picked_color=$(hyprpicker)
+                    if [[ -n "$picked_color" && "$picked_color" =~ ^#?[A-Fa-f0-9]{6}$ ]]; then
+                        set_accent_color "$picked_color"
+                        notify-send "Accent Color" "Applied color $picked_color" -a "Wallpaper switcher" &
+                    else
+                        notify-send "Accent Color" "Selection cancelled" -a "Wallpaper switcher" &
+                        exit 0
+                    fi
                     shift
                 fi
                 ;;

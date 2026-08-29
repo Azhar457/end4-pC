@@ -20,6 +20,8 @@ Singleton {
         "wps": "wps-office2019-kprometheus",
         "wpsoffice": "wps-office2019-kprometheus",
         "footclient": "foot",
+        "Termius": "termius-app",
+        "termius": "termius-app",
     })
     property var regexSubstitutions: [
         {
@@ -48,10 +50,21 @@ Singleton {
             ))
     )
     
-    readonly property var preppedNames: list.map(a => ({
-        name: Fuzzy.prepare(`${a.name} `),
-        entry: a
-    }))
+    readonly property var preppedNames: list.map(a => {
+        let kw = "";
+        try {
+            if (Array.isArray(a.keywords)) kw = a.keywords.join(" ");
+            else if (typeof a.keywords === "string") kw = a.keywords;
+        } catch (e) {}
+        let gen = a.genericName ?? "";
+        let comment = a.comment ?? "";
+        let idName = a.id ?? "";
+        let combined = `${a.name} ${gen} ${kw} ${comment} ${idName} `;
+        return {
+            name: Fuzzy.prepare(combined),
+            entry: a
+        };
+    })
 
     readonly property var preppedIcons: list.map(a => ({
         name: Fuzzy.prepare(`${a.icon} `),
@@ -59,6 +72,7 @@ Singleton {
     }))
 
     function fuzzyQuery(search: string): var { // Idk why list<DesktopEntry> doesn't work
+        if (!search || search.trim().length === 0) return list;
         if (root.sloppySearch) {
             const results = list.map(obj => ({
                 entry: obj,

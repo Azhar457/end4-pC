@@ -39,7 +39,7 @@ Singleton {
     Process {
         id: checkAvailabilityProc
         running: Config.ready && Config.options.updates.enableCheck
-        command: ["which", "checkupdates"]
+        command: ["bash", "-c", "command -v dnf || command -v checkupdates || command -v apt"]
         onExited: (exitCode, exitStatus) => {
             root.available = (exitCode === 0);
             root.refresh();
@@ -48,10 +48,11 @@ Singleton {
 
     Process {
         id: checkUpdatesProc
-        command: ["bash", "-c", "pacman=$(checkupdates 2>/dev/null | wc -l); aur=$(yay -Qua 2>/dev/null | wc -l || paru -Qua 2>/dev/null | wc -l || echo 0); echo $((pacman + aur))"]
+        command: [`${Directories.scriptsPath}/system/check_updates.sh`]
         stdout: StdioCollector {
             onStreamFinished: {
-                root.count = parseInt(text.trim())
+                let parsed = parseInt(text.trim());
+                root.count = isNaN(parsed) ? 0 : parsed;
             }
         }
     }
