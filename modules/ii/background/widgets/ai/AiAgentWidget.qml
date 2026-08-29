@@ -58,10 +58,15 @@ AbstractBackgroundWidget {
 		root.activeSessionToolCallsCount = cnt;
 	}
 
-	readonly property string sessionsFilePath: `${Directories.state}/quickshell/user/ai_agent_sessions.json`
+	readonly property string sessionsFilePath: FileUtils.trimFileProtocol(`${Directories.state}/user/ai_agent_sessions.json`)
 	readonly property string agentCorePath: `${Directories.scriptPath}/agent/agent-core.mjs`
-	readonly property string agentSaveCachePath: `${Directories.scriptPath}/agent/save-cache.mjs`
 	readonly property var aiCfg: Config.options.background.widgets.aiAgent
+
+	FileView {
+		id: sessionsFileView
+		path: root.sessionsFilePath
+		blockLoading: true
+	}
 
 	onModeChanged: {
 		// Keyboard focus must be claimed BEFORE focusing any field: the layer
@@ -126,7 +131,9 @@ AbstractBackgroundWidget {
 	// ─── SESSION MANAGER ────────────────────────────────────────────────────────
 	function loadSessionsFromDisk() {
 		try {
-			const raw = FileUtils.readFile(root.sessionsFilePath);
+			sessionsFileView.path = root.sessionsFilePath;
+			sessionsFileView.reload();
+			const raw = sessionsFileView.text();
 			if (raw && raw.trim().length > 0) {
 				const parsed = JSON.parse(raw);
 				if (Array.isArray(parsed) && parsed.length > 0) {
@@ -135,7 +142,9 @@ AbstractBackgroundWidget {
 					return;
 				}
 			}
-		} catch (e) {}
+		} catch (e) {
+			console.warn("[AiAgentWidget] Could not load sessions:", e);
+		}
 		createNewSession(false);
 	}
 
@@ -184,10 +193,12 @@ AbstractBackgroundWidget {
 		// Deep clone to guarantee QML list view bindings update
 		root.sessionsList = JSON.parse(JSON.stringify(updated));
 
-		cacheWriter.targetPath = root.sessionsFilePath;
-		cacheWriter.payload = JSON.stringify(updated, null, 2);
-		cacheWriter.stdinEnabled = true;
-		cacheWriter.running = true;
+		try {
+			sessionsFileView.path = root.sessionsFilePath;
+			sessionsFileView.setText(JSON.stringify(updated, null, 2));
+		} catch (e) {
+			console.warn("[AiAgentWidget] Could not save sessions:", e);
+		}
 	}
 
 	function createNewSession(shouldFlip = true) {
@@ -266,21 +277,6 @@ AbstractBackgroundWidget {
 		interval: 400
 		repeat: false
 		onTriggered: root.saveSessionsToDisk()
-	}
-
-	Process {
-		id: cacheWriter
-		property string targetPath: ""
-		property string payload: ""
-		command: ["node", root.agentSaveCachePath, targetPath]
-		stdinEnabled: true
-		onRunningChanged: {
-			if (running && payload.length > 0) {
-				write(payload);
-				write("\n");
-				stdinEnabled = false; // End input stream so save-cache.mjs flushes to disk
-			}
-		}
 	}
 
 	Process {
