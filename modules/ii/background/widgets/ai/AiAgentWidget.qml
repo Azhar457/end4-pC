@@ -74,6 +74,7 @@ AbstractBackgroundWidget {
 		if (mode === "chat" || mode === "settings") {
 			GlobalStates.desktopWidgetKeyboardFocus = true;
 			if (mode === "chat") focusTimer.restart();
+			if (mode === "settings") root.fetchLiveModels();
 		} else {
 			GlobalStates.desktopWidgetKeyboardFocus = false;
 		}
@@ -267,6 +268,55 @@ AbstractBackgroundWidget {
 		inputArea.text = "";
 		root.activeSessionToolCallsCount = 0;
 		saveSessionsToDisk();
+	}
+
+	property var availableModelsList: []
+	property bool isFetchingModels: false
+
+	function fetchLiveModels() {
+		const prov = Config.options.background.widgets.aiAgent.provider || "9router";
+		if (prov === "9router" || prov === "custom") {
+			const ep = Config.options.background.widgets.aiAgent.endpoint || "http://127.0.0.1:20128/v1/chat/completions";
+			const baseEp = ep.replace(/\/chat\/completions\/?$/, "/models");
+			modelsFetchProc.command = ["curl", "-sL", "--max-time", "5", baseEp];
+			modelsFetchProc.running = true;
+		} else if (prov === "ollama") {
+			modelsFetchProc.command = ["curl", "-sL", "--max-time", "5", "http://127.0.0.1:11434/api/tags"];
+			modelsFetchProc.running = true;
+		}
+	}
+
+	Process {
+		id: modelsFetchProc
+		property string buf: ""
+		onRunningChanged: {
+			if (running) {
+				buf = "";
+				root.isFetchingModels = true;
+			} else {
+				root.isFetchingModels = false;
+			}
+		}
+		stdout: SplitParser {
+			onRead: (data) => { modelsFetchProc.buf += data + "\n"; }
+		}
+		onExited: (exitCode, exitStatus) => {
+			root.isFetchingModels = false;
+			if (exitCode === 0 && modelsFetchProc.buf.trim().length > 0) {
+				try {
+					const json = JSON.parse(modelsFetchProc.buf.trim());
+					let list = [];
+					if (Array.isArray(json.data)) {
+						list = json.data.map(d => d.id).filter(id => id && id.length > 0);
+					} else if (Array.isArray(json.models)) {
+						list = json.models.map(m => m.name).filter(n => n && n.length > 0);
+					}
+					if (list.length > 0) {
+						root.availableModelsList = list;
+					}
+				} catch (e) {}
+			}
+		}
 	}
 
 	// ─── AGENT PROCESS ──────────────────────────────────────────────────────────
@@ -1001,8 +1051,42 @@ AbstractBackgroundWidget {
 											} else if (modelData.id === "9router") {
 												Config.options.background.widgets.aiAgent.model = "ag/claude-sonnet-4-6";
 											}
+											root.fetchLiveModels();
 										}
 									}
+								}
+							}
+						}
+
+						RowLayout {
+							Layout.fillWidth: true
+							spacing: 6
+
+							StyledText {
+								Layout.fillWidth: true
+								font.pixelSize: Appearance.font.pixelSize.small
+								font.weight: Font.Bold
+								color: Appearance.colors.colPrimary
+								text: "Select Model (Live Dropdown & Search):"
+							}
+
+							ToolbarPairedFab {
+								baseSize: 26
+								iconText: "refresh"
+								onClicked: root.fetchLiveModels()
+							}
+						}
+
+						// Live Model Dropdown if fetched
+						StyledComboBoxSearch {
+							id: liveModelCombo
+							Layout.fillWidth: true
+							visible: root.availableModelsList.length > 0
+							model: root.availableModelsList
+							displayText: Config.options.background.widgets.aiAgent.model || (root.availableModelsList.length > 0 ? root.availableModelsList[0] : "Select model...")
+							onActivated: (idx) => {
+								if (idx >= 0 && idx < root.availableModelsList.length) {
+									Config.options.background.widgets.aiAgent.model = root.availableModelsList[idx];
 								}
 							}
 						}
@@ -1011,7 +1095,7 @@ AbstractBackgroundWidget {
 							font.pixelSize: Appearance.font.pixelSize.small
 							font.weight: Font.Bold
 							color: Appearance.colors.colPrimary
-							text: "Model Identifier & Quick Presets:"
+							text: "Quick Presets & Manual Model ID:"
 						}
 
 						// Preset model quick chips
