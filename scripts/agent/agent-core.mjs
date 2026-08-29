@@ -308,21 +308,6 @@ export async function streamLLMCompletion({
 
 	if (!res.ok) {
 		const body = await res.text().catch(() => "");
-		if ((res.status === 429 || res.status === 400) && endpoint.includes("opencode.ai")) {
-			const fallbackModels = ["nemotron-3.5-lightning-free", "hy3-free", "ling-3.0-flash-fin-free"].filter(m => m !== model);
-			for (const fallbackModel of fallbackModels) {
-				try {
-					return await streamLLMCompletion({
-						endpoint,
-						model: fallbackModel,
-						apiKey,
-						messages,
-						onChunk,
-						onThink
-					});
-				} catch {}
-			}
-		}
 		throw new Error(`LLM HTTP ${res.status}: ${body.slice(0, 500)}`);
 	}
 

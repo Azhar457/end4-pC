@@ -181,7 +181,8 @@ AbstractBackgroundWidget {
 			});
 		}
 
-		root.sessionsList = updated;
+		// Deep clone to guarantee QML list view bindings update
+		root.sessionsList = JSON.parse(JSON.stringify(updated));
 
 		cacheWriter.targetPath = root.sessionsFilePath;
 		cacheWriter.payload = JSON.stringify(updated, null, 2);
@@ -669,7 +670,10 @@ AbstractBackgroundWidget {
 					ToolbarPairedFab {
 						baseSize: 32
 						iconText: "arrow_back"
-						onClicked: root.toggleFlip("sessions")
+						onClicked: {
+							root.saveSessionsToDisk();
+							root.toggleFlip("sessions");
+						}
 					}
 
 					ColumnLayout {
@@ -1011,7 +1015,57 @@ AbstractBackgroundWidget {
 							font.pixelSize: Appearance.font.pixelSize.small
 							font.weight: Font.Bold
 							color: Appearance.colors.colPrimary
-							text: "Model Identifier:"
+							text: "Model Identifier & Quick Presets:"
+						}
+
+						// Preset model quick chips
+						Flow {
+							Layout.fillWidth: true
+							spacing: 6
+
+							property var currentPresets: {
+								const p = Config.options.background.widgets.aiAgent.provider || "opencode";
+								if (p === "opencode") return ["hy3-free", "nemotron-3.5-lightning-free", "ling-3.0-flash-fin-free", "qwen2.5-72b-instruct"];
+								if (p === "9router") return ["ag/gemini-3.7-flash-high", "ag/claude-sonnet-4-6", "ag/deepseek-r1", "ag/gpt-4o"];
+								if (p === "ollama") return ["qwen2.5:3b-instruct", "llama3.2:3b", "deepseek-r1:7b"];
+								return [];
+							}
+
+							Repeater {
+								model: parent.currentPresets
+								delegate: Rectangle {
+									required property var modelData
+									implicitHeight: 26
+									implicitWidth: chipText.implicitWidth + 16
+									radius: Appearance.rounding.full
+									color: (Config.options.background.widgets.aiAgent.model === modelData)
+										? Appearance.colors.colSecondaryContainer
+										: Appearance.colors.colLayer1
+									border.width: 1
+									border.color: (Config.options.background.widgets.aiAgent.model === modelData)
+										? Appearance.colors.colSecondary
+										: Appearance.colors.colLayer0Border
+
+									StyledText {
+										id: chipText
+										anchors.centerIn: parent
+										font.pixelSize: Appearance.font.pixelSize.smaller
+										font.weight: Font.Medium
+										color: (Config.options.background.widgets.aiAgent.model === modelData)
+											? Appearance.colors.colOnSecondaryContainer
+											: Appearance.colors.colOnLayer0
+										text: modelData
+									}
+
+									MouseArea {
+										anchors.fill: parent
+										cursorShape: Qt.PointingHandCursor
+										onClicked: {
+											Config.options.background.widgets.aiAgent.model = modelData;
+										}
+									}
+								}
+							}
 						}
 
 						Rectangle {
