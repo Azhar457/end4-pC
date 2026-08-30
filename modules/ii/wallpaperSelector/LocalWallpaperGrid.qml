@@ -163,22 +163,18 @@ Item {
                     ? Appearance.colors.colOnSecondaryContainer
                     : Appearance.colors.colOnLayer0
 
-            MouseArea {
-                anchors.fill: parent
-                acceptedButtons: Qt.RightButton
-                z: 2
-                onClicked: event => {
-                    if (event.button === Qt.RightButton) {
-                        var pos = mapToItem(contextMenu.parent, 0, 0)
-                        contextMenu.targetX = pos.x
-                        contextMenu.targetY = pos.y
-                        contextMenu.targetPath = modelData.filePath
-                        contextMenu.visible = true
-                    }
+            onEntered: grid.currentIndex = index
+            onClicked: mouse => {
+                if (mouse.button === Qt.RightButton) {
+                    const pos = mapToItem(contextMenu.parent, 0, 0);
+                    contextMenu.targetX = pos.x;
+                    contextMenu.targetY = pos.y;
+                    contextMenu.targetPath = modelData.filePath;
+                    contextMenu.visible = true;
+                } else {
+                    root.activated();
                 }
             }
-
-            onEntered: grid.currentIndex = index
             onPreviewRequested: {
                 grid.currentIndex = index;
                 if (!fileModelData.fileIsDir && Config.options.background.enableWallpaperPreview) Wallpapers.startPreview(fileModelData.filePath);

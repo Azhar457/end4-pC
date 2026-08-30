@@ -48,6 +48,7 @@ ShellRoot {
         Cliphist.refresh()
         Wallpapers.load()
         LiveWallpaper.load()
+        // SpeechToText daemon is spawned lazily on first IPC call; nothing to do at boot.
         Updates.load()
         LyricsService.restartLyrics()
     }

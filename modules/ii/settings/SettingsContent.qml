@@ -291,11 +291,22 @@ Item {
                                 clip: true
                                 font.pixelSize: Appearance.font.pixelSize.smaller
                                 Text {
-                                    text: Translation.tr("Search...")
+                                    text: Translation.tr("Search settings, widgets, themes…")
                                     visible: !searchField.text && !searchField.activeFocus
                                     color: Appearance.colors.colSubtext
                                     font: searchField.font
                                     anchors.verticalCenter: parent.verticalCenter
+                                }
+                                Connections {
+                                    target: GlobalStates
+                                    function onSettingsOpenChanged() {
+                                        if (GlobalStates.settingsOpen) {
+                                            Qt.callLater(() => {
+                                                searchField.forceActiveFocus();
+                                                searchField.selectAll();
+                                            });
+                                        }
+                                    }
                                 }
                                 onTextChanged: {
                                     SettingsSearchService.search(text);

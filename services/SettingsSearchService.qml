@@ -42,8 +42,10 @@ Singleton {
         { title: "System Tray (SysTray)", page: 2, pageName: "bar", term: "tray", keywords: "tray systray icons status applet" },
 
         // Desktop (page 3)
-        { title: "Wallpaper & Background", page: 3, pageName: "desktop", term: "wallpaper", keywords: "wallpaper image background picture showcase" },
+        { title: "Wallpaper & Background", page: 3, pageName: "desktop", term: "wallpaper", keywords: "wallpaper image background picture showcase live video gif animated mp4 webm" },
+        { title: "Live Wallpaper (Video / GIF)", page: 3, pageName: "desktop", term: "livewallpaper", keywords: "live wallpaper video gif animated mp4 webm play pause auto pause battery fullscreen lock" },
         { title: "Desktop Widgets (Clock / Media / System)", page: 3, pageName: "desktop", term: "widgets", keywords: "desktop widgets clock media system stats" },
+        { title: "AI Agent Desktop Widget", page: 3, pageName: "desktop", term: "aiAgent", keywords: "ai agent chat gpt gemini opencode tool calling widget desktop hyprland" },
         { title: "Background Blur", page: 3, pageName: "desktop", term: "blur", keywords: "blur background desktop frosted glass" },
         { title: "Centered Wallpaper Fit", page: 3, pageName: "desktop", term: "centered", keywords: "centered wallpaper fit stretch contain" },
 
@@ -82,8 +84,10 @@ Singleton {
         { title: "Check for Dotfiles Updates", page: 7, pageName: "about", term: "update", keywords: "update dotfiles git version commit" }
     ]
 
+    // Re-run search whenever the query changes so external widgets can
+    // bind against `searchMatches` and see live results.
     function search(queryString) {
-        root.query = queryString.trim().toLowerCase();
+        root.query = (queryString || "").trim().toLowerCase();
         if (root.query.length === 0) {
             root.searchMatches = [];
             root.currentMatchIdx = 0;
@@ -92,13 +96,25 @@ Singleton {
 
         let matches = [];
         for (let i = 0; i < root.allSettingsItems.length; i++) {
-            let item = root.allSettingsItems[i];
-            if (item.title.toLowerCase().includes(root.query) ||
-                item.keywords.toLowerCase().includes(root.query) ||
-                item.term.toLowerCase().includes(root.query)) {
-                matches.push(item);
+            const item = root.allSettingsItems[i];
+            const haystack = (item.title + " " + item.keywords + " " + item.term).toLowerCase();
+            // Substring match is enough for short queries; split into tokens
+            // so "wallpaper theme" still finds "Wallpaper & Background".
+            const tokens = root.query.split(/\s+/).filter(t => t.length > 0);
+            const allMatch = tokens.every(t => haystack.includes(t));
+            if (allMatch) {
+                // Avoid ES2018 object spread — use Object.assign + tracked score.
+                matches.push(Object.assign({}, item, { _score: tokens.length * 100 + haystack.indexOf(root.query) }));
             }
         }
+        // Best match first: longer queries (more tokens) + earlier substring
+        matches.sort((a, b) => a._score - b._score);
+        // Strip the helper key
+        matches = matches.map(m => {
+            const copy = Object.assign({}, m);
+            delete copy._score;
+            return copy;
+        });
         root.searchMatches = matches;
         root.currentMatchIdx = 0;
         return matches;
@@ -123,19 +139,30 @@ Singleton {
 
         if (pagesRepeater) {
             let loader = pagesRepeater.itemAt(targetPageIdx);
+            const trigger = () => {
+                if (loader && loader.item && typeof loader.item.goTo === "function") {
+                    loader.item.goTo(match.term);
+                }
+                // After the page has had a moment to scroll, ping the highlight
+                // so the target box can pulse for a moment.
+                root.highlightRequested(match.term, targetPageIdx);
+            };
             if (loader && loader.item && typeof loader.item.goTo === "function") {
-                loader.item.goTo(match.term);
+                trigger();
             } else if (loader) {
                 let conn = function() {
-                    if (loader.item && typeof loader.item.goTo === "function") {
-                        loader.item.goTo(match.term);
-                    }
+                    if (loader.item) trigger();
                     loader.onLoaded.disconnect(conn);
                 };
                 loader.onLoaded.connect(conn);
             }
         }
     }
+
+    // Emitted whenever the search should visually highlight a target box on
+    // the destination page. Subscribers (ContentPage, ConfigRow) animate a
+    // pulsing rectangle around the term they just opened.
+    signal highlightRequested(string term, int pageIndex)
 
     function next(settingsRoot, pagesRepeater) {
         if (root.searchMatches.length === 0) return;
