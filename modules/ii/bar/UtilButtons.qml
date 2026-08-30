@@ -25,6 +25,12 @@ Item {
         spacing: isMaterial ? 2 : 4
 
         Loader {
+            // Always show the live wallpaper play/pause toggle whenever the
+            // current wallpaper is a video, even if smart auto-pause (battery
+            // / fullscreen / screen lock) is currently keeping the player
+            // stopped. The button is the user's explicit override — they may
+            // need it to bring the wallpaper back on after waking the machine
+            // or dismissing a fullscreen window.
             active: LiveWallpaper.isVideo
             visible: active
             sourceComponent: isMaterial ? liveWallpaperM3 : legacyLiveWallpaper

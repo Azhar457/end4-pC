@@ -175,12 +175,25 @@ Variants {
         }
 
         // Smart Playback Management (Wallpaper Engine / Lively Wallpaper style efficiency)
+        // 'systemPaused' is a debug-only property retained for inspection. The
+        // effective playback intent is encoded in 'shouldPlayVideo' below.
+        readonly property bool systemPaused: bgRoot.wallpaperIsVideo
+            && (bgRoot.wallpaperSafetyTriggered
+                || bgRoot.hiddenForFullscreen
+                || GlobalStates.screenLocked
+                || (Battery.available && Battery.isLowAndNotCharging))
+        // Current playback intent. manualPaused is treated as the user's
+        // explicit override; the system-side auto-pause conditions are still
+        // applied. The play button is always available whenever the wallpaper
+        // is a video, so the user can resume from any auto-pause state.
         readonly property bool shouldPlayVideo: bgRoot.wallpaperIsVideo
-            && !bgRoot.wallpaperSafetyTriggered
+            && !LiveWallpaper.manualPaused
             && !bgRoot.hiddenForFullscreen
+            && !bgRoot.wallpaperSafetyTriggered
             && !GlobalStates.screenLocked
             && !(Battery.available && Battery.isLowAndNotCharging)
-            && !LiveWallpaper.manualPaused
+
+        readonly property bool wallpaperSafetyBlocks: bgRoot.wallpaperSafetyTriggered || bgRoot.hiddenForFullscreen
 
         onWallpaperIsVideoChanged: {
             LiveWallpaper.isVideo = bgRoot.wallpaperIsVideo;
@@ -202,7 +215,20 @@ Variants {
         Connections {
             target: LiveWallpaper
             function onPlayRequested() {
-                if (bgRoot.wallpaperIsVideo) videoPlayer.play();
+                // Manual play always wins over 'manualPaused' (the button is the
+                // user's explicit override). System-level safety conditions
+                // (work-safety filter, fullscreen app) are still respected.
+                if (!bgRoot.wallpaperIsVideo) return;
+                if (bgRoot.hiddenForFullscreen || bgRoot.wallpaperSafetyTriggered) {
+                    videoPlayer.pause();
+                    return;
+                }
+                // Seek to 0 to recover from QtMultimedia's internal pause state
+                // that sometimes fails to resume cleanly after long pauses.
+                if (videoPlayer.position >= videoPlayer.duration && videoPlayer.duration > 0) {
+                    videoPlayer.position = 0;
+                }
+                videoPlayer.play();
             }
             function onPauseRequested() {
                 if (bgRoot.wallpaperIsVideo) videoPlayer.pause();
@@ -212,6 +238,9 @@ Variants {
                 if (videoPlayer.playbackState === MediaPlayer.PlayingState) {
                     videoPlayer.pause();
                 } else {
+                    if (videoPlayer.position >= videoPlayer.duration && videoPlayer.duration > 0) {
+                        videoPlayer.position = 0;
+                    }
                     videoPlayer.play();
                 }
             }
