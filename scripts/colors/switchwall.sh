@@ -223,27 +223,11 @@ switch() {
             if [[ -z "$colors_only_flag" ]]; then
                 set_wallpaper_path "$imgpath"
                 set_thumbnail_path "$thumbnail"
-
-                local video_path="$imgpath"
-                if command -v mpvpaper &> /dev/null; then
-                    monitors=$(hyprctl monitors -j | jq -r '.[] | .name' 2>/dev/null)
-                    for monitor in $monitors; do
-                        mpvpaper -o "$VIDEO_OPTS" "$monitor" "$video_path" &
-                        sleep 0.1
-                    done
-                elif command -v mpv &> /dev/null; then
-                    # Fallback native mpv video background player
-                    pkill -f "mpv.*video_wallpaper" 2>/dev/null || true
-                    mpv --no-audio --loop=inf --no-osc --no-osd-bar --no-input-default-bindings --title="video_wallpaper" "$video_path" >/dev/null 2>&1 &
-                fi
             fi
 
             if [ -f "$thumbnail" ]; then
                 matugen_args+=(image "$thumbnail")
                 generate_colors_material_args=(--path "$thumbnail")
-                if [[ -z "$colors_only_flag" ]]; then
-                    create_restore_script "$video_path"
-                fi
             else
                 echo "Cannot create image to colorgen, falling back to default"
                 default_wall="$SCRIPT_DIR/../../assets/images/default_wallpaper.png"

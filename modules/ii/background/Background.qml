@@ -9,6 +9,7 @@ import qs.modules.common.functions as CF
 import QtQuick
 import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
+import QtMultimedia
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
@@ -253,6 +254,26 @@ Variants {
             
             Behavior on opacity {
                 NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
+            }
+
+            MediaPlayer {
+                id: videoPlayer
+                source: bgRoot.wallpaperIsVideo && !bgRoot.wallpaperSafetyTriggered
+                    ? Qt.resolvedUrl(bgRoot.effectiveWallpaperPath)
+                    : ""
+                loops: MediaPlayer.Infinite
+                audioOutput: null
+                videoOutput: videoOutput
+                Component.onCompleted: {
+                    if (bgRoot.wallpaperIsVideo) play();
+                }
+            }
+
+            VideoOutput {
+                id: videoOutput
+                anchors.fill: parent
+                fillMode: VideoOutput.PreserveAspectCrop
+                visible: bgRoot.wallpaperIsVideo && !blurLoader.active && !bgRoot.wallpaperSafetyTriggered
             }
 
             Image {
