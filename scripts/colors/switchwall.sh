@@ -106,10 +106,109 @@ RESTORE_SCRIPT_DIR="$CUSTOM_DIR/scripts"
 RESTORE_SCRIPT="$RESTORE_SCRIPT_DIR/__restore_video_wallpaper.sh"
 THUMBNAIL_DIR="$RESTORE_SCRIPT_DIR/mpvpaper_thumbnails"
 VIDEO_OPTS="no-audio loop hwdec=auto scale=bilinear interpolation=no video-sync=display-resample panscan=1.0 video-scale-x=1.0 video-scale-y=1.0 video-align-x=0.5 video-align-y=0.5 load-scripts=no"
+NORMALIZED_CACHE_DIR="$XDG_CACHE_HOME/quickshell/wallpaper-cache"
+mkdir -p "$NORMALIZED_CACHE_DIR"
 
 is_video() {
     local extension="${1##*.}"
-    [[ "$extension" == "mp4" || "$extension" == "webm" || "$extension" == "mkv" || "$extension" == "avi" || "$extension" == "mov" ]] && return 0 || return 1
+    [[ "${extension,,}" == "mp4" || "${extension,,}" == "webm" || "${extension,,}" == "mkv" || "${extension,,}" == "avi" || "${extension,,}" == "mov" || "${extension,,}" == "m4v" || "${extension,,}" == "gif" ]] && return 0 || return 1
+}
+
+# Cache key: hash of absolute path + mtime + size. So a re-encoded MP4 is reused
+# while leaving the source untouched. Cache lives in $XDG_CACHE_HOME so it does
+# not pollute $XDG_CONFIG_HOME and survives "deploy" cycles.
+cache_key_for() {
+    local src="$1"
+    local mtime
+    mtime=$(stat -c %Y "$src" 2>/dev/null || echo 0)
+    local size
+    size=$(stat -c %s "$src" 2>/dev/null || echo 0)
+    printf "%s" "$src" | sha256sum | awk -v mt="$mtime" -v sz="$size" '{print substr($1,1,16)"_"mt"_"sz}'
+}
+
+# Probe whether a file is already an MP4 with H.264 video (and optional AAC audio).
+# Returns 0 if re-encode is unnecessary.
+already_h264_mp4() {
+    local f="$1"
+    command -v ffprobe >/dev/null 2>&1 || return 1
+    ffprobe -v error -select_streams v:0 -show_entries stream=codec_name \
+        -of default=nw=1:nk=1 "$f" 2>/dev/null | grep -q "^h264$"
+}
+
+# Pick the best available H.264-class video encoder. Order:
+#   1. libx264  - Fedora RPM Fusion builds (most compatible HW decoder-wise)
+#   2. libsvtav1 - AV1, fast, very good quality (libsvtav1 in RPM Fusion)
+#   3. libvpx-vp9 - WebM standard, present in ffmpeg-free
+#  Audio is intentionally dropped (-an) since video wallpapers are muted.
+pick_video_encoder() {
+    local codec="$1"
+    if ffmpeg -hide_banner -encoders 2>/dev/null | awk '{print $2}' | grep -qx "$codec"; then
+        echo "$codec"
+        return 0
+    fi
+    return 1
+}
+
+# Transcode any supported input into a normalized MP4. Writes to
+# $NORMALIZED_CACHE_DIR/<key>.mp4 and prints the resulting path. Falls
+# back to the source path if ffmpeg fails or no encoder is available.
+normalize_video() {
+    local src="$1"
+    local key
+    key=$(cache_key_for "$src")
+    local out="$NORMALIZED_CACHE_DIR/$key.mp4"
+
+    if [[ -f "$out" ]]; then
+        echo "$out"
+        return 0
+    fi
+
+    if ! command -v ffmpeg >/dev/null 2>&1; then
+        echo "$src"
+        return 0
+    fi
+
+    local venc=""
+    if pick_video_encoder libx264 >/dev/null; then
+        venc=libx264
+    elif pick_video_encoder libsvtav1 >/dev/null; then
+        venc=libsvtav1
+    elif pick_video_encoder libvpx-vp9 >/dev/null; then
+        venc=libvpx-vp9
+    else
+        echo "[switchwall] No suitable video encoder (libx264/libsvtav1/libvpx-vp9) in ffmpeg; using source." >&2
+        echo "$src"
+        return 0
+    fi
+
+    # Encoder-specific arguments
+    local extra_args=()
+    if [[ "$venc" == "libx264" ]]; then
+        extra_args=(-preset veryfast -crf 23 -pix_fmt yuv420p)
+    elif [[ "$venc" == "libsvtav1" ]]; then
+        extra_args=(-preset 8 -crf 32 -pix_fmt yuv420p)
+    elif [[ "$venc" == "libvpx-vp9" ]]; then
+        extra_args=(-deadline realtime -b:v 0 -crf 33 -pix_fmt yuv420p)
+    fi
+
+    local -a cmd=(
+        ffmpeg -y -hide_banner -loglevel error
+        -i "$src"
+        -map 0:v:0
+        -c:v "$venc"
+        "${extra_args[@]}"
+        -movflags +faststart
+        -an
+        "$out"
+    )
+    if "${cmd[@]}" 2>/dev/null; then
+        echo "[switchwall] Encoded $src -> $out (codec: $venc)" >&2
+        echo "$out"
+    else
+        echo "[switchwall] ffmpeg normalize failed for $src; falling back to source." >&2
+        rm -f "$out"
+        echo "$src"
+    fi
 }
 
 kill_existing_mpvpaper() {
@@ -478,7 +577,7 @@ main() {
             target_dir="$HOME/Pictures"
         fi
         if command -v kdialog &>/dev/null; then
-            imgpath="$(kdialog --getopenfilename "$target_dir" "*.png *.jpg *.jpeg *.webp *.mp4 *.webm *.mkv|Supported Wallpapers (*.png, *.jpg, *.webp, *.mp4)" --title 'Choose wallpaper' 2>/dev/null)"
+            imgpath="$(kdialog --getopenfilename "$target_dir" "*.png *.jpg *.jpeg *.webp *.mp4 *.webm *.mkv *.avi *.mov *.m4v *.gif|Supported Wallpapers (*.png, *.jpg, *.webp, *.mp4, *.webm, *.gif)" --title 'Choose wallpaper' 2>/dev/null)"
         elif command -v zenity &>/dev/null; then
             imgpath="$(zenity --file-selection --filename="$target_dir/" --title="Choose wallpaper" 2>/dev/null)"
         fi
@@ -488,6 +587,19 @@ main() {
         set_accent_color ""
         color_flag=""
         color=""
+    fi
+
+    # Normalize any non-MP4 / non-H.264 source into a cached .mp4 so the
+    # background pipeline (QtMultimedia, ffmpeg thumbnail, scheme detect) sees
+    # a single canonical format. Native MP4 sources pass through untouched.
+    if is_video "$imgpath" && [[ -f "$imgpath" ]]; then
+        if [[ "${imgpath,,}" != *.mp4 ]] || ! already_h264_mp4 "$imgpath"; then
+            normalized=$(normalize_video "$imgpath")
+            if [[ -n "$normalized" && "$normalized" != "$imgpath" ]]; then
+                echo "[switchwall] Normalized: $imgpath -> $normalized" >&2
+                imgpath="$normalized"
+            fi
+        fi
     fi
 
     if [[ "$type_flag" == "auto" ]]; then
