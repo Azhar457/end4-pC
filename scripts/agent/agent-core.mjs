@@ -121,6 +121,19 @@ function toOpenAITools(tools) {
 	}));
 }
 
+function resolveUserPath(rawPath) {
+	if (!rawPath || typeof rawPath !== "string") return os.homedir();
+	let p = rawPath.trim();
+	if (p.startsWith("~")) {
+		return path.resolve(p.replace(/^~/, os.homedir()));
+	}
+	// Sanitize hallucinated /home/<username>/ to the real user's home directory
+	if (/^\/home\/[^/]+/.test(p)) {
+		return path.resolve(p.replace(/^\/home\/[^/]+/, os.homedir()));
+	}
+	return path.resolve(p);
+}
+
 // ─── TOOL EXECUTORS ──────────────────────────────────────────────────────────
 export async function executeTool(toolName, args = {}, onDelta = () => {}) {
 	try {
@@ -135,7 +148,7 @@ export async function executeTool(toolName, args = {}, onDelta = () => {}) {
 				return res.length > 2000 ? (res.slice(0, 2000) + `\n... (truncated, total ${res.length} chars)`) : res;
 			}
 			case "file_read": {
-				const fullPath = path.resolve(args.filePath.replace(/^~/, os.homedir()));
+				const fullPath = resolveUserPath(args.filePath);
 				const content = await fs.readFile(fullPath, "utf-8");
 				const maxLines = args.maxLines || 100;
 				const lines = content.split("\n");
@@ -145,7 +158,7 @@ export async function executeTool(toolName, args = {}, onDelta = () => {}) {
 				return content.length > 2500 ? (content.slice(0, 2500) + `\n\n... (truncated)`) : content;
 			}
 			case "file_write": {
-				const fullPath = path.resolve(args.filePath.replace(/^~/, os.homedir()));
+				const fullPath = resolveUserPath(args.filePath);
 				await fs.mkdir(path.dirname(fullPath), { recursive: true });
 				await fs.writeFile(fullPath, args.content, "utf-8");
 				return `Successfully wrote ${args.content.length} bytes to ${fullPath}`;
@@ -243,13 +256,21 @@ export function resolveApiKey() {
 
 // ─── SYSTEM PROMPT BUILDER ───────────────────────────────────────────────────
 export function buildAgentSystemPrompt() {
+	const user = os.userInfo?.()?.username || "jars";
+	const home = os.homedir?.() || "/home/jars";
+
 	return `You are the built-in AI Desktop Assistant for "end4-pC" (a customized Material 3 Quickshell desktop environment on Fedora Linux, supporting Hyprland & Niri Wayland compositors).
 
-IMPORTANT: An explicit configuration reference file exists at SETTINGS.md in the end4-pC root directory (~/.config/quickshell/end4-pC/SETTINGS.md). When the user asks about desktop settings, wallpaper changes, keybinds, or shell customization, you MUST consult or follow SETTINGS.md as your authoritative source of truth.
+Runtime User Info:
+- Current User: ${user}
+- Home Directory: ${home} (Always use '~' or '${home}', NEVER assume any other username)
+
+IMPORTANT: An explicit configuration reference file exists at SETTINGS.md in the end4-pC root directory (${home}/.config/quickshell/end4-pC/SETTINGS.md). When the user asks about desktop settings, wallpaper changes, keybinds, or shell customization, you MUST consult or follow SETTINGS.md as your authoritative source of truth.
 
 Key Architectural Context of end4-pC:
 - Shell Core: Quickshell (Qt6/QML) with Material 3 theming.
 - Shell Configuration File: ~/.config/illogical-impulse/config.json (stores settings for bar, background, widgets, colors, services).
+  * NOTE: Modifying ~/.config/illogical-impulse/config.json will AUTOMATICALLY hot-reload in Quickshell without needing to restart the shell.
 - GUI Settings App: Can be toggled with Super+I or clicked from the sidebar/bar.
 - Wallpaper & Color Theming:
   * Switch wallpaper & auto-generate Material You palette: ~/.config/quickshell/end4-pC/scripts/colors/switchwall.sh <image_path>
@@ -260,13 +281,13 @@ Key Architectural Context of end4-pC:
   * Niri: Config file in ~/.config/niri/config.kdl.
   * Note: GNOME, KDE Plasma, and X11 are NOT used. Always provide Wayland-native solutions (grim, slurp, hyprctl, niri msg).
 - Widgets & Services:
-  * Background widgets (AI Agent, Clock, Media, Notes, Todo, etc.) are configured in GUI Settings -> Background or ~/.config/illogical-impulse/config.json -> "background"."widgets".
+  * Background widgets (AI Agent, Clock, Media, Notes, Todo, Calendar, UserCard, WorldClock, Resources, etc.) are configured in GUI Settings -> Background or ~/.config/illogical-impulse/config.json -> "background"."widgets". To enable/disable, simply set "enable": true/false in config.json.
   * Bar modules are in modules/ii/bar/ and configured via GUI Settings -> Bar.
 
 Guidelines:
 1. Always be direct, friendly, and practical in Indonesian or English (matching the user's language).
 2. Point users directly to the right setting or file path according to SETTINGS.md when asked how to customize or fix something.
-3. When executing tasks (e.g. changing wallpaper or switching themes), run the proper script directly and provide the user with clear feedback.
+3. When executing tasks (e.g. changing wallpaper, switching themes, toggling widgets in config.json), perform the exact file edit or script execution directly.
 4. Keep explanations concise, clear, and actionable.`;
 }
 

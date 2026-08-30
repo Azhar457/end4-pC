@@ -59,6 +59,24 @@ Theming di end4-pC digerakkan oleh **Matugen** (Material You color generator) ya
 ### Melalui GUI Settings:
 - Tekan **`Super + I`** untuk membuka panel Settings lengkap (Personalization, Bar, Background Widgets, Services, Hyprland/Niri config).
 
+### Pengaturan Background Widgets & Hot-Reload:
+- File: `~/.config/illogical-impulse/config.json` -> key `"background"."widgets"`.
+- Setiap widget memiliki property `"enable": true / false`.
+- **⚡ Hot-Reload**: Mengubah nilai `"enable"` pada `config.json` akan **langsung ter-reload otomatis oleh Quickshell tanpa perlu restart shell**.
+
+Daftar nama widget yang tersedia:
+- `aiAgent`: Desktop AI Agent
+- `calendar`: Kalender
+- `clock`: Jam (cookie/digital/pixel)
+- `todo`: To-Do List
+- `notes`: Catatan Desktop
+- `resources`: Monitor Resource (CPU, RAM, Disk)
+- `userCard`: Kartu Profil Pengguna
+- `worldClock`: Jam Dunia
+- `media`: Media Player Controller
+- `weather`: Cuaca (memerlukan geocode/network)
+- `customImage`: Gambar Kustom Desktop
+
 ### Skema Kunci di `~/.config/illogical-impulse/config.json`:
 - **`appearance`**:
   - `palette.type`: Jenis palet (`"auto"`, `"scheme-tonal-spot"`, `"scheme-expressive"`, dll.)
