@@ -26,12 +26,7 @@ MouseArea {
     margins: Appearance.sizes.wallpaperSelectorItemMargins
     padding: Appearance.sizes.wallpaperSelectorItemPadding
     hoverEnabled: true
-    onClicked: {
-        if (GlobalStates.wallpaperSelectorTarget === "lockWall" || !Config.options.background.enableWallpaperPreview)
-            root.activated()
-        else
-            root.previewRequested()
-    }
+    onClicked: root.activated()
     onDoubleClicked: root.activated()
 
     Rectangle {
