@@ -246,16 +246,17 @@ Singleton {
 
     Process {
         id: mathProc
-        property list<string> baseCommand: ["qalc", "-t"]
+        command: ["bash", "-c", "true"]
         function calculateExpression(expression) {
             if (!expression || expression.trim().length === 0) return;
             mathProc.running = false;
-            mathProc.command = ["bash", "-c", `command -v qalc >/dev/null && exec qalc -t "${expression}" || true`];
+            const safeExpr = expression.replace(/["\\`$]/g, "\\$&");
+            mathProc.command = ["bash", "-c", `if command -v qalc >/dev/null; then exec qalc -t "${safeExpr}"; else python3 -c "import math; print(eval('''${safeExpr}'''))" 2>/dev/null || true; fi`];
             mathProc.running = true;
         }
         stdout: SplitParser {
             onRead: data => {
-                root.mathResult = data;
+                root.mathResult = data.trim();
             }
         }
     }

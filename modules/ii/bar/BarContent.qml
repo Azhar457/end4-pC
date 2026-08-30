@@ -43,7 +43,7 @@ Item {
     function safeSetMirrored(targetItem, val) {
         if (!targetItem) return;
         try {
-            if ("mirrored" in targetItem && typeof targetItem.mirrored === "boolean") {
+            if (targetItem.hasOwnProperty("mirrored")) {
                 targetItem.mirrored = val;
             }
         } catch (e) {}

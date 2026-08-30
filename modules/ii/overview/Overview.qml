@@ -105,17 +105,17 @@ Scope {
                 Component {
                     id: defaultComponent
                     OverviewWidget {
-                        screen: panelWindow.screen
-                        visible: (panelWindow.searchingText == "")
+                        screen: panelWindow?.screen ?? null
+                        visible: ((panelWindow?.searchingText ?? "") == "")
                     }
                 }
 
                 Component {
                     id: niriComponent
                     NiriOverview {
-                        screen: panelWindow.screen
+                        screen: panelWindow?.screen ?? null
                         panelWindow: panelWindow
-                        visible: (panelWindow.searchingText == "")
+                        visible: ((panelWindow?.searchingText ?? "") == "")
                     }
                 }
             }

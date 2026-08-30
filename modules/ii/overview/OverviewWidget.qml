@@ -266,7 +266,7 @@ Item {
                             window.Drag.active = false
                             root.draggingFromWorkspace = -1
                             if (targetWorkspace !== -1 && targetWorkspace !== windowData?.workspace.id) {
-                                Hyprland.dispatch(`hl.dsp.window.move({ workspace = ${targetWorkspace}, follow = false, window = "address:${window.windowData?.address}" })`)
+                                Hyprland.dispatch(`movetoworkspacesilent ${targetWorkspace},address:${window.windowData?.address}`)
                             }
                             else {
                                 if (!window.windowData.floating) {
@@ -275,7 +275,7 @@ Item {
                                 }
                                 const percentageX = (window.x - xOffset) / root.workspaceImplicitWidth
                                 const percentageY = (window.y - yOffset) / root.workspaceImplicitHeight
-                                Hyprland.dispatch(`hl.dsp.window.move({ x = "${percentageX * root.screen.width}", y = "${percentageY * root.screen.height}", window = "address:${window.windowData?.address}" })`)
+                                Hyprland.dispatch(`movewindowpixel exact ${Math.round(percentageX * root.screen.width)} ${Math.round(percentageY * root.screen.height)},address:${window.windowData?.address}`)
                             }
                         }
                         onClicked: (event) => {
@@ -283,10 +283,10 @@ Item {
 
                             if (event.button === Qt.LeftButton) {
                                 GlobalStates.overviewOpen = false
-                                Hyprland.dispatch(`hl.dsp.focus({ window = "address:${windowData.address}" })`)
+                                Hyprland.dispatch(`focuswindow address:${windowData.address}`)
                                 event.accepted = true
                             } else if (event.button === Qt.MiddleButton) {
-                                Hyprland.dispatch(`hl.dsp.window.close({ window = "address:${windowData.address}" })`)
+                                Hyprland.dispatch(`closewindow address:${windowData.address}`)
                                 event.accepted = true
                             }
                         }

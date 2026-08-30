@@ -62,13 +62,13 @@ Item {
 
     readonly property var meaningfulPlayers: {
         const preferred = Config.options.bar.media.preferredPlayer.trim().toLowerCase()
-        if (preferred.length === 0) return filterDuplicatePlayers(realPlayers)
-        const filtered = realPlayers.filter(p =>
+        if (preferred.length === 0) return root.filterDuplicatePlayers(root.realPlayers)
+        const filtered = root.realPlayers.filter(p =>
             (p.identity ?? "").toLowerCase().includes(preferred) ||
             (p.desktopEntry ?? "").toLowerCase().includes(preferred)
         )
-        if (filtered.length === 0) return filterDuplicatePlayers(realPlayers)
-        return filterDuplicatePlayers(filtered)
+        if (filtered.length === 0) return root.filterDuplicatePlayers(root.realPlayers)
+        return root.filterDuplicatePlayers(filtered)
     }
 
     Connections {
