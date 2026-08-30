@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Service
+MimeType=image/png;image/jpeg;image/webp;image/bmp;image/svg+xml;video/mp4;video/webm;video/x-matroska;
+Actions=SetWallpaper;
+X-KDE-Priority=TopLevel
+
+[Desktop Action SetWallpaper]
+Name=Set as Wallpaper (end4-pC)
+Name[id]=Jadikan Wallpaper (end4-pC)
+Icon=preferences-desktop-wallpaper
+Exec=/usr/bin/bash -c "HOME=/home/jars $HOME/.config/quickshell/end4-pC/scripts/colors/switchwall.sh --image \"%f\""
+Terminal=false

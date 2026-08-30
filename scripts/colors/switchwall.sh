@@ -215,54 +215,27 @@ switch() {
         if is_video "$imgpath"; then
             mkdir -p "$THUMBNAIL_DIR"
 
-            missing_deps=()
-            if ! command -v mpvpaper &> /dev/null; then
-                missing_deps+=("mpvpaper")
-            fi
-            if ! command -v ffmpeg &> /dev/null; then
-                missing_deps+=("ffmpeg")
-            fi
-            if [ ${#missing_deps[@]} -gt 0 ]; then
-                echo "Missing deps: ${missing_deps[*]}"
-                local install_cmd="sudo dnf install -y ${missing_deps[*]}"
-                if command -v dnf5 &>/dev/null || command -v dnf &>/dev/null; then
-                    install_cmd="sudo dnf install -y ${missing_deps[*]}"
-                elif command -v apt &>/dev/null; then
-                    install_cmd="sudo apt install -y ${missing_deps[*]}"
-                elif command -v pacman &>/dev/null; then
-                    install_cmd="sudo pacman -S --noconfirm ${missing_deps[*]}"
-                fi
-                action=$(notify-send \
-                    -a "Wallpaper switcher" \
-                    -c "im.error" \
-                    -A "install_deps=Install Dependencies" \
-                    "Can't switch to video wallpaper" \
-                    "Missing dependencies: ${missing_deps[*]}")
-                if [[ "$action" == "install_deps" ]]; then
-                    kitty -1 bash -c "$install_cmd"
-                    if command -v mpvpaper &>/dev/null && command -v ffmpeg &>/dev/null; then
-                        notify-send 'Wallpaper switcher' 'Alright, try again!' -a "Wallpaper switcher"
-                    fi
-                fi
-                exit 0
+            thumbnail="$THUMBNAIL_DIR/$(basename "$imgpath").jpg"
+            if command -v ffmpeg &> /dev/null; then
+                ffmpeg -y -i "$imgpath" -vframes 1 "$thumbnail" 2>/dev/null
             fi
 
             if [[ -z "$colors_only_flag" ]]; then
                 set_wallpaper_path "$imgpath"
+                set_thumbnail_path "$thumbnail"
 
                 local video_path="$imgpath"
-                monitors=$(hyprctl monitors -j | jq -r '.[] | .name')
-                for monitor in $monitors; do
-                    mpvpaper -o "$VIDEO_OPTS" "$monitor" "$video_path" &
-                    sleep 0.1
-                done
-            fi
-
-            thumbnail="$THUMBNAIL_DIR/$(basename "$imgpath").jpg"
-            ffmpeg -y -i "$imgpath" -vframes 1 "$thumbnail" 2>/dev/null
-
-            if [[ -z "$colors_only_flag" ]]; then
-                set_thumbnail_path "$thumbnail"
+                if command -v mpvpaper &> /dev/null; then
+                    monitors=$(hyprctl monitors -j | jq -r '.[] | .name' 2>/dev/null)
+                    for monitor in $monitors; do
+                        mpvpaper -o "$VIDEO_OPTS" "$monitor" "$video_path" &
+                        sleep 0.1
+                    done
+                elif command -v mpv &> /dev/null; then
+                    # Fallback native mpv video background player
+                    pkill -f "mpv.*video_wallpaper" 2>/dev/null || true
+                    mpv --no-audio --loop=inf --no-osc --no-osd-bar --no-input-default-bindings --title="video_wallpaper" "$video_path" >/dev/null 2>&1 &
+                fi
             fi
 
             if [ -f "$thumbnail" ]; then
@@ -272,11 +245,10 @@ switch() {
                     create_restore_script "$video_path"
                 fi
             else
-                echo "Cannot create image to colorgen"
-                if [[ -z "$colors_only_flag" ]]; then
-                    remove_restore
-                fi
-                exit 1
+                echo "Cannot create image to colorgen, falling back to default"
+                default_wall="$SCRIPT_DIR/../../assets/images/default_wallpaper.png"
+                matugen_args+=(image "$default_wall")
+                generate_colors_material_args=(--path "$default_wall")
             fi
         else
             matugen_args+=(image "$imgpath")
