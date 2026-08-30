@@ -281,10 +281,10 @@ Scope {
                             }
                             onClicked: {
                                 GlobalStates.desktopMenuOpen = false
-                                Wallpapers.openFallbackPicker(
-                                    Appearance.m3colors.darkmode,
-                                    Config.options.wallpaperSelector.liveWallpapersPath ?? ""
-                                )
+                                GlobalStates.wallpaperSelectorOpen = true
+                                if (Config.options.wallpaperSelector.liveWallpapersPath && Config.options.wallpaperSelector.liveWallpapersPath.length > 0) {
+                                    Wallpapers.setDirectory(Config.options.wallpaperSelector.liveWallpapersPath);
+                                }
                             }
                         }
 
