@@ -356,9 +356,9 @@ Singleton {
                         property real y: 350
                         property real width: 460
                         property real height: 540
-                        property string provider: "9router"
-                        property string model: "ag/claude-sonnet-4-6"
-                        property string endpoint: "http://127.0.0.1:20128/v1/chat/completions"
+                        property string provider: "opencode"
+                        property string model: "hy3-free"
+                        property string endpoint: "https://opencode.ai/zen/v1/chat/completions"
                         property string apiKey: ""
                         property bool confirmTools: true
                     }

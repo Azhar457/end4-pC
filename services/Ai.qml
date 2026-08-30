@@ -261,6 +261,17 @@ Singleton {
     // - api_format: The API format of the model. Can be "openai" or "gemini". Default is "openai".
     // - extraParams: Extra parameters to be passed to the model. This is a JSON object.
     property var models: Config.options.policies.ai === 2 ? {} : {
+        "opencode-free": aiModelComponent.createObject(this, {
+            "name": "OpenCode Free (hy3)",
+            "icon": "spark-symbolic",
+            "description": Translation.tr("Free / Zero Setup | OpenCode Zen AI\nFast, free desktop assistant for end4-pC without needing an API key."),
+            "homepage": "https://opencode.ai",
+            "endpoint": "https://opencode.ai/zen/v1/chat/completions",
+            "model": "hy3-free",
+            "requires_key": false,
+            "key_id": "opencode",
+            "api_format": "openai",
+        }),
         "hermes-agent": aiModelComponent.createObject(this, {
             "name": "Hermes Agent (Native CLI)",
             "icon": "spark-symbolic",

@@ -103,7 +103,7 @@ AbstractBackgroundWidget {
 	property string targetNextMode: "chat"
 
 	function providerConfig() {
-		const prov = aiCfg.provider || "9router";
+		const prov = aiCfg.provider || "opencode";
 		if (prov === "opencode" || prov === "opencode-free") {
 			return {
 				endpoint: "https://opencode.ai/zen/v1/chat/completions",
@@ -132,8 +132,8 @@ AbstractBackgroundWidget {
 			};
 		}
 		return {
-			endpoint: aiCfg.endpoint || "http://127.0.0.1:20128/v1/chat/completions",
-			model: aiCfg.model || "ag/gemini-3.7-flash-high",
+			endpoint: aiCfg.endpoint || "https://opencode.ai/zen/v1/chat/completions",
+			model: aiCfg.model || "hy3-free",
 			apiKey: aiCfg.apiKey || ""
 		};
 	}
