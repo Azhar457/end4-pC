@@ -1,0 +1,179 @@
+#!/usr/bin/env python3
+"""
+rice-doctor: Healthcheck and Self-Healing CLI for end4-pC & Rice Ecosystem
+"""
+
+import sys
+import os
+import glob
+import json
+import shutil
+import time
+import urllib.request
+import subprocess
+from pathlib import Path
+
+OK = " [OK] "
+WARN = "[WARN]"
+ERR = "[FAIL]"
+
+def run_cmd(cmd, timeout=5):
+    try:
+        res = subprocess.run(cmd, shell=True, text=True, capture_output=True, timeout=timeout)
+        return res.returncode, res.stdout.strip(), res.stderr.strip()
+    except subprocess.TimeoutExpired:
+        return 124, "", "Timed out"
+    except Exception as e:
+        return 1, "", str(e)
+
+def clean_dead_quickshell_sockets():
+    runtime_dir = os.environ.get("XDG_RUNTIME_DIR", f"/run/user/{os.getuid()}")
+    by_id = Path(runtime_dir) / "quickshell" / "by-id"
+    if by_id.exists():
+        import socket
+        for folder in by_id.iterdir():
+            if folder.is_dir():
+                sock_path = folder / "ipc.sock"
+                if sock_path.exists():
+                    s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                    s.settimeout(0.05)
+                    try:
+                        s.connect(str(sock_path))
+                        s.close()
+                    except Exception:
+                        shutil.rmtree(folder, ignore_errors=True)
+
+def check_quickshell():
+    clean_dead_quickshell_sockets()
+    for _ in range(3):
+        code, out, _ = run_cmd("qs -c end4-pC ipc show", timeout=5)
+        if code == 0:
+            return {"status": "OK", "msg": "Quickshell IPC is active and responsive."}
+        time.sleep(0.5)
+    code_ps, out_ps, _ = run_cmd("pgrep -a qs")
+    if code_ps == 0 and "end4-pC" in out_ps:
+        return {"status": "WARN", "msg": "Quickshell process is alive but IPC not responding."}
+    return {"status": "ERR", "msg": "Quickshell is not running."}
+
+def check_hyprland():
+    sig = os.environ.get("HYPRLAND_INSTANCE_SIGNATURE", "")
+    if sig:
+        code, out, _ = run_cmd("hyprctl monitors")
+        if code == 0 and "Monitor" in out:
+            return {"status": "OK", "msg": f"Hyprland active (instance {sig[:12]}...)."}
+    return {"status": "WARN", "msg": "Hyprland session signature not detected."}
+
+def check_sni_tray():
+    try:
+        res = subprocess.run(["busctl", "--user", "call", "org.kde.StatusNotifierWatcher", "/StatusNotifierWatcher", "org.freedesktop.DBus.Properties", "GetAll", "s", "org.kde.StatusNotifierWatcher"], text=True, capture_output=True, timeout=5)
+        if res.returncode == 0:
+            xembed = "running" if run_cmd("pgrep -x xembedsniproxy")[0] == 0 else "not running"
+            return {"status": "OK", "msg": f"D-Bus StatusNotifierWatcher active (xembedsniproxy: {xembed})."}
+    except Exception:
+        pass
+    return {"status": "WARN", "msg": "D-Bus StatusNotifierWatcher not responding."}
+
+def check_9router():
+    try:
+        req = urllib.request.Request("http://127.0.0.1:20128/v1/models", headers={"User-Agent": "rice-doctor"})
+        with urllib.request.urlopen(req, timeout=3) as resp:
+            if resp.status == 200:
+                data = json.loads(resp.read().decode())
+                models = len(data.get("data", []))
+                return {"status": "OK", "msg": f"9Router gateway online on :20128 ({models} models available)."}
+    except Exception as e:
+        pass
+    return {"status": "WARN", "msg": "9Router gateway offline on port 20128."}
+
+def check_hermes_proxy():
+    code, out, _ = run_cmd("systemctl --user is-active hermes-rice-proxy.service")
+    if code == 0 and "active" in out:
+        return {"status": "OK", "msg": "hermes-rice-proxy.service is active."}
+    return {"status": "WARN", "msg": "hermes-rice-proxy.service is inactive or failed."}
+
+def check_stale_locks():
+    config_dir = Path.home() / ".config"
+    stale = []
+    for lock in config_dir.glob("*/SingletonLock"):
+        if lock.is_symlink():
+            try:
+                target = os.readlink(lock)
+                pid_str = target.split("-")[-1]
+                if pid_str.isdigit():
+                    pid = int(pid_str)
+                    if not Path(f"/proc/{pid}").exists():
+                        stale.append((lock, pid))
+            except Exception:
+                pass
+    if stale:
+        return {"status": "WARN", "msg": f"Found {len(stale)} stale SingletonLock file(s) with dead PIDs.", "stale": stale}
+    return {"status": "OK", "msg": "No stale SingletonLock files detected."}
+
+def fix_all(results):
+    print("\n[REPAIR] Running auto-healing...")
+    
+    # 1. Stale locks
+    stale_check = results.get("stale_locks", {})
+    if "stale" in stale_check and stale_check["stale"]:
+        for lock, pid in stale_check["stale"]:
+            parent = lock.parent
+            for f in parent.glob("Singleton*"):
+                try:
+                    f.unlink()
+                    print(f"  -> Cleaned stale lock: {f} (Dead PID: {pid})")
+                except Exception as e:
+                    print(f"  -> Failed to delete {f}: {e}")
+
+    # 2. XEmbed bridge
+    if run_cmd("pgrep -x xembedsniproxy")[0] != 0 and shutil.which("xembedsniproxy"):
+        subprocess.Popen(["xembedsniproxy"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+        print("  -> Started xembedsniproxy daemon.")
+
+    # 3. Hermes proxy
+    if results.get("hermes_proxy", {}).get("status") != "OK":
+        run_cmd("systemctl --user restart hermes-rice-proxy.service")
+        print("  -> Restarted hermes-rice-proxy.service.")
+
+    # 4. Quickshell reload
+    if results.get("quickshell", {}).get("status") == "OK":
+        run_cmd("qs -c end4-pC ipc call settings toggle 2>/dev/null || true")
+        print("  -> Triggered Quickshell IPC reload.")
+    elif results.get("quickshell", {}).get("status") == "ERR":
+        subprocess.Popen(["qs", "-c", "end4-pC", "-d", "-n"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+        print("  -> Started Quickshell daemon.")
+
+    print("[REPAIR] Auto-healing complete.\n")
+
+def main():
+    args = sys.argv[1:]
+    json_mode = "--json" in args
+    fix_mode = "--fix" in args
+
+    checks = {
+        "quickshell": check_quickshell(),
+        "hyprland": check_hyprland(),
+        "sni_tray": check_sni_tray(),
+        "9router": check_9router(),
+        "hermes_proxy": check_hermes_proxy(),
+        "stale_locks": check_stale_locks(),
+    }
+
+    if json_mode:
+        print(json.dumps(checks, indent=2))
+        return
+
+    print("=== end4-pC System Health Audit ===")
+    for name, res in checks.items():
+        tag = OK if res["status"] == "OK" else (WARN if res["status"] == "WARN" else ERR)
+        label = name.replace("_", " ").title().ljust(16)
+        print(f"{tag} {label} : {res['msg']}")
+
+    if fix_mode:
+        fix_all(checks)
+    else:
+        has_issue = any(r["status"] != "OK" for r in checks.values())
+        if has_issue:
+            print("\nTip: Run 'rice-doctor --fix' to automatically heal detected issues.")
+
+if __name__ == "__main__":
+    main()

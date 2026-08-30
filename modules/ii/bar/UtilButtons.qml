@@ -1,4 +1,5 @@
 import qs
+import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
 import QtQuick
@@ -22,6 +23,41 @@ Item {
         anchors.centerIn: parent
         flow: root.vertical ? Flow.TopToBottom : Flow.LeftToRight
         spacing: isMaterial ? 2 : 4
+
+        Loader {
+            active: LiveWallpaper.isVideo
+            visible: active
+            sourceComponent: isMaterial ? liveWallpaperM3 : legacyLiveWallpaper
+        }
+
+        Component {
+            id: liveWallpaperM3
+            UtilButton {
+                iconText: !LiveWallpaper.isPlaying ? "play_arrow" : (LiveWallpaper.isMuted ? "motion_mode" : "volume_up")
+                onClicked: (event) => {
+                    if (event && event.button === Qt.RightButton) {
+                        LiveWallpaper.toggleMute();
+                    } else {
+                        LiveWallpaper.togglePlay();
+                    }
+                }
+            }
+        }
+
+        Component {
+            id: legacyLiveWallpaper
+            CircleUtilButton {
+                onClicked: LiveWallpaper.togglePlay()
+                altAction: (event) => LiveWallpaper.toggleMute()
+                MaterialSymbol {
+                    horizontalAlignment: Qt.AlignHCenter
+                    fill: 1
+                    text: !LiveWallpaper.isPlaying ? "play_arrow" : (LiveWallpaper.isMuted ? "motion_mode" : "volume_up")
+                    iconSize: Appearance.font.pixelSize.large
+                    color: Appearance.colors.colOnLayer2
+                }
+            }
+        }
 
         Loader {
             active: Config.options.bar.utilButtons.showScreenSnip
