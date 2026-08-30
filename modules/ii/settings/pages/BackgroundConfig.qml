@@ -969,6 +969,11 @@ ContentPage {
                 Repeater {
                     model: [
                         {
+                            icon: "smart_toy",
+                            name: Translation.tr("AI Agent"),
+                            enabled: Config.options.background.widgets.aiAgent.enable
+                        },
+                        {
                             icon: "weather_mix",
                             name: Translation.tr("Weather"),
                             enabled: Config.options.background.widgets.weather.enable
@@ -1052,7 +1057,9 @@ ContentPage {
                                     Layout.fillWidth: false
                                     checked: modelData.enabled
                                     onCheckedChanged: {
-                                        if (modelData.icon === "weather_mix")
+                                        if (modelData.icon === "smart_toy")
+                                            Config.options.background.widgets.aiAgent.enable = checked
+                                        else if (modelData.icon === "weather_mix")
                                             Config.options.background.widgets.weather.enable = checked
                                         else if (modelData.icon === "image")
                                             Config.options.background.widgets.images.enable = checked

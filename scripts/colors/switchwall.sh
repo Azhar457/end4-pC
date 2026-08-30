@@ -1,5 +1,5 @@
 export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
-QUICKSHELL_CONFIG_NAME="ii"
+QUICKSHELL_CONFIG_NAME="end4-pC"
 XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
 XDG_STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
@@ -188,10 +188,23 @@ switch() {
         matugen_args+=(color hex "$color")
         generate_colors_material_args=(--color "$color")
     else
-        if [[ -z "$imgpath" ]]; then
-            echo 'Aborted'
-            exit 0
+    # Fallback to default wallpaper if image path does not exist on disk
+    if [[ "$color_flag" != "1" ]]; then
+        if [[ -z "$imgpath" || ! -f "$imgpath" ]]; then
+            default_wall="$SCRIPT_DIR/../../assets/images/default_wallpaper.png"
+            if [[ -f "$default_wall" ]]; then
+                imgpath="$default_wall"
+            else
+                first_pic=$(find "$HOME/Pictures" -type f \( -name "*.png" -o -name "*.jpg" -o -name "*.jpeg" -o -name "*.webp" \) 2>/dev/null | head -1)
+                if [[ -n "$first_pic" && -f "$first_pic" ]]; then
+                    imgpath="$first_pic"
+                fi
+            fi
+            if [[ -n "$imgpath" && -f "$imgpath" && -z "$colors_only_flag" ]]; then
+                set_wallpaper_path "$imgpath"
+            fi
         fi
+    fi
 
         check_and_prompt_upscale "$imgpath" &
 
@@ -492,12 +505,19 @@ main() {
 
     # Only prompt for wallpaper if not using --color and not using --noswitch and no imgpath set
     if [[ -z "$imgpath" && -z "$color_flag" && -z "$noswitch_flag" ]]; then
+        local target_dir="."
         if [[ -n "$start_dir_flag" && -d "$start_dir_flag" ]]; then
-            cd "$start_dir_flag" || return 1
-        else
-            cd "$(xdg-user-dir PICTURES)/Wallpapers/showcase" 2>/dev/null || cd "$(xdg-user-dir PICTURES)/Wallpapers" 2>/dev/null || cd "$(xdg-user-dir PICTURES)" || return 1
+            target_dir="$start_dir_flag"
+        elif [[ -d "$(xdg-user-dir PICTURES)/Wallpapers" ]]; then
+            target_dir="$(xdg-user-dir PICTURES)/Wallpapers"
+        elif [[ -d "$HOME/Pictures" ]]; then
+            target_dir="$HOME/Pictures"
         fi
-        imgpath="$(kdialog --getopenfilename . --title 'Choose wallpaper')"
+        if command -v kdialog &>/dev/null; then
+            imgpath="$(kdialog --getopenfilename "$target_dir" "*.png *.jpg *.jpeg *.webp *.mp4 *.webm *.mkv|Supported Wallpapers (*.png, *.jpg, *.webp, *.mp4)" --title 'Choose wallpaper' 2>/dev/null)"
+        elif command -v zenity &>/dev/null; then
+            imgpath="$(zenity --file-selection --filename="$target_dir/" --title="Choose wallpaper" 2>/dev/null)"
+        fi
     fi
 
     if [[ -n "$imgpath" && -z "$noswitch_flag" ]]; then
