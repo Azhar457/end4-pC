@@ -183,19 +183,36 @@ Variants {
             bgRoot.videoRevealed = bgRoot.wallpaperIsVideo
         }
 
-        onWallpaperPathChanged: {
-            bgRoot.videoRevealed = false
+        onEffectiveWallpaperPathChanged: {
             if (wallpaperSafetyTriggered) {
+                videoPlayer.stop()
+                videoPlayer.source = ""
                 previousWallpaper.source = ""
                 wallpaper.source = ""
                 bgRoot.transitionProgress = 1.0
+                bgRoot.videoRevealed = false
                 return
             }
+
+            if (bgRoot.wallpaperIsVideo) {
+                previousWallpaper.source = ""
+                wallpaper.source = bgRoot.wallpaperPath
+                bgRoot.currentWallpaperSource = bgRoot.wallpaperPath
+                videoPlayer.source = Qt.resolvedUrl(bgRoot.effectiveWallpaperPath)
+                videoPlayer.play()
+                bgRoot.videoRevealed = true
+                bgRoot.transitionProgress = 1.0
+                return
+            }
+
+            // Switching to static image
+            videoPlayer.stop()
+            videoPlayer.source = ""
+            bgRoot.videoRevealed = false
+
             if (bgRoot.wallpaperAnimation === "") {
                 wallpaper.source = wallpaperPath
                 bgRoot.currentWallpaperSource = wallpaperPath
-                if (!bgRoot.wallpaperIsVideo) return
-                bgRoot.videoRevealed = true
                 return
             }
 
@@ -208,6 +225,12 @@ Variants {
                 bgRoot.currentShader = bgRoot.wallpaperAnimation
             }
             bgRoot.transitionProgress = 0.0
+        }
+
+        onWallpaperPathChanged: {
+            if (!bgRoot.wallpaperIsVideo && wallpaperPath !== bgRoot.currentWallpaperSource) {
+                wallpaper.source = wallpaperPath
+            }
         }
 
         NumberAnimation {
@@ -264,8 +287,20 @@ Variants {
                 loops: MediaPlayer.Infinite
                 audioOutput: null
                 videoOutput: videoOutput
+                onPlaybackStateChanged: {
+                    if (playbackState === MediaPlayer.StoppedState && bgRoot.wallpaperIsVideo && !bgRoot.wallpaperSafetyTriggered) {
+                        play()
+                    }
+                }
+                onSourceChanged: {
+                    if (source.toString().length > 0 && bgRoot.wallpaperIsVideo && !bgRoot.wallpaperSafetyTriggered) {
+                        play()
+                    } else {
+                        stop()
+                    }
+                }
                 Component.onCompleted: {
-                    if (bgRoot.wallpaperIsVideo) play();
+                    if (bgRoot.wallpaperIsVideo && !bgRoot.wallpaperSafetyTriggered) play()
                 }
             }
 
