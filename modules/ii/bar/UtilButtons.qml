@@ -71,6 +71,42 @@ Item {
             sourceComponent: isMaterial ? screenSnipM3 : legacyScreenSnip
         }
 
+        // Wallpaper picker — click opens the in-app wallpaper selector, which
+        // is far more reliable than kdialog on Hyprland.
+        Loader {
+            active: Config.options.bar.utilButtons.showWallpaperToggle !== false
+            visible: active
+            sourceComponent: isMaterial ? wallpaperM3 : legacyWallpaper
+        }
+
+        Component {
+            id: wallpaperM3
+            UtilButton {
+                iconText: "wallpaper"
+                onClicked: {
+                    GlobalStates.wallpaperSelectorOpen = true;
+                    GlobalStates.wallpaperSelectorTarget = "wallpaper";
+                }
+            }
+        }
+
+        Component {
+            id: legacyWallpaper
+            CircleUtilButton {
+                onClicked: {
+                    GlobalStates.wallpaperSelectorOpen = true;
+                    GlobalStates.wallpaperSelectorTarget = "wallpaper";
+                }
+                MaterialSymbol {
+                    horizontalAlignment: Qt.AlignHCenter
+                    fill: 1
+                    text: "wallpaper"
+                    iconSize: Appearance.font.pixelSize.large
+                    color: Appearance.colors.colOnLayer2
+                }
+            }
+        }
+
         Component {
             id: screenSnipM3
             UtilButton {

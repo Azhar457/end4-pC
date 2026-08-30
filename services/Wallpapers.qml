@@ -50,7 +50,13 @@ Singleton {
     Connections {
         target: Config.options.background
         function onWallpaperPathChanged() {
-            root.confirmedPath = "";
+            // IMPORTANT: do NOT clear confirmedPath here. When apply() runs,
+            // it first sets confirmedPath = path, then asynchronously launches
+            // switchwall.sh, which then writes Config.options.background.wallpaperPath.
+            // If we cleared confirmedPath in this signal, a wallpaperselected
+            // click would race with the script's write and effectiveWallpaperPath
+            // would fall back to the wrong path. Only reset previewPath so the
+            // arrow-nav hover-preview does not stick after a real apply.
             root.previewPath = "";
         }
     }
@@ -163,11 +169,35 @@ Singleton {
     }
 
     // Folder model
+    // We rebuild nameFilters reactively every time the user types in the
+    // search bar. The previous binding (`root.extensions.map(...)` with
+    // `*${searchQuery.split(" ")}*`) produced the literal glob "***.ext"
+    // when searchQuery was empty — a pattern that matches nothing, so the
+    // wallpaper grid rendered an empty folder even though the file existed.
+    // We now always anchor the search-token (when any) on each side and
+    // fall back to the bare extension when the field is empty. We use an
+    // explicit reduce() because QML's older JS engine does not support
+    // ES2019 Array.prototype.flat().
+    readonly property var namePatterns: {
+        const q = (root.searchQuery || "").trim().split(/\s+/).filter(s => s.length > 0);
+        const all = [];
+        for (let i = 0; i < root.extensions.length; i++) {
+            const ext = root.extensions[i];
+            if (q.length === 0) {
+                all.push("*." + ext);
+            } else {
+                for (let j = 0; j < q.length; j++) {
+                    all.push("*" + q[j] + "*." + ext);
+                }
+            }
+        }
+        return all;
+    }
     FolderListModelWithHistory {
         id: folderModel
         folder: Qt.resolvedUrl(root.defaultFolder)
         caseSensitive: false
-        nameFilters: root.extensions.map(ext => `*${searchQuery.split(" ").filter(s => s.length > 0).map(s => `*${s}*`)}*.${ext}`)
+        nameFilters: root.namePatterns
         showDirs: true
         showDotAndDotDot: false
         showOnlyReadable: true
