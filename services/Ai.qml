@@ -687,7 +687,7 @@ Singleton {
 
             /* Create command string */
             let scriptRequestContent = ""
-            scriptRequestContent += `curl --no-buffer "${endpoint}"`
+            scriptRequestContent += `curl --no-buffer --connect-timeout 10 "${endpoint}"`
                 + ` ${headerString}`
                 + (authHeader ? ` ${authHeader}` : "")
                 + ` --data '${CF.StringUtils.shellSingleQuoteEscape(JSON.stringify(data))}'`
@@ -705,7 +705,7 @@ Singleton {
         stdout: SplitParser {
             onRead: data => {
                 if (data.length === 0) return;
-                if (requester.message.thinking) requester.message.thinking = false;
+                if (requester.message && requester.message.thinking) requester.message.thinking = false;
                 // console.log("[Ai] Raw response line: ", data);
 
                 // Handle response line
@@ -728,23 +728,32 @@ Singleton {
                     
                 } catch (e) {
                     console.log("[AI] Could not parse response: ", e);
-                    requester.message.rawContent += data;
-                    requester.message.content += data;
+                    if (requester.message) {
+                        requester.message.rawContent += data;
+                        requester.message.content += data;
+                    }
                 }
             }
         }
 
+
         onExited: (exitCode, exitStatus) => {
+            if (exitCode !== 0 && requester.message && requester.message.content.length === 0) {
+                const errMsg = "\n\n> ⚠️ **Request Failed** (Exit code " + exitCode + "). Check if 9Router (port 20128) or internet is online.";
+                requester.message.content = errMsg;
+                requester.message.rawContent = errMsg;
+            }
+
             const result = requester.currentStrategy.onRequestFinished(requester.message);
             
             if (result.finished) {
                 requester.markDone();
-            } else if (!requester.message.done) {
+            } else if (requester.message && !requester.message.done) {
                 requester.markDone();
             }
 
             // Handle error responses
-            if (requester.message.content.includes("API key not valid")) {
+            if (requester.message && requester.message.content.includes("API key not valid")) {
                 root.addApiKeyAdvice(models[requester.message.model]);
             }
         }

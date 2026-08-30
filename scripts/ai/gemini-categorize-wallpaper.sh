@@ -13,9 +13,16 @@ WALLPAPER_NAME="$(basename "$SOURCE_IMG_PATH")"
 PROMPT="${3:-${GEMINI_WALLPAPER_PROMPT:-Categorize the wallpaper. Its file name is $WALLPAPER_NAME}}"
 RESIZED_IMG_PATH="/tmp/quickshell/ai/wallpaper.jpg"
 
-# Resize image for speed
+# Resize image for speed (safe single-frame extraction to prevent runaway OOM on videos)
 mkdir -p "$(dirname "$RESIZED_IMG_PATH")"
-magick "$SOURCE_IMG_PATH" -resize 200x -quality 50 "$RESIZED_IMG_PATH"
+case "${SOURCE_IMG_PATH,,}" in
+    *.mp4|*.webm|*.mkv|*.avi|*.mov)
+        ffmpeg -y -loglevel error -ss 00:00:01 -i "$SOURCE_IMG_PATH" -vframes 1 -vf "scale=200:-1" -q:v 2 "$RESIZED_IMG_PATH"
+        ;;
+    *)
+        magick "$SOURCE_IMG_PATH[0]" -resize 200x -quality 50 "$RESIZED_IMG_PATH"
+        ;;
+esac
 
 # Get API key
 API_KEY=$(secret-tool lookup 'application' 'illogical-impulse' | jq -r '.apiKeys.gemini')

@@ -48,11 +48,16 @@ Singleton {
 
     Process {
         id: checkUpdatesProc
-        command: [`${Directories.scriptsPath}/system/check_updates.sh`]
+        command: [`${Directories.scriptPath}/system/check_updates.sh`]
         stdout: StdioCollector {
             onStreamFinished: {
                 let parsed = parseInt(text.trim());
                 root.count = isNaN(parsed) ? 0 : parsed;
+            }
+        }
+        onExited: (exitCode, exitStatus) => {
+            if (exitCode !== 0) {
+                root.count = 0;
             }
         }
     }

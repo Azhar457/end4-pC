@@ -423,6 +423,13 @@ Item {
                                 }
                             }
 
+                            PagePlaceholder {
+                                visible: pageLoader.status === Loader.Error
+                                icon: "error"
+                                title: Translation.tr("Page Error")
+                                description: Translation.tr("Failed to load this settings page.")
+                            }
+
                             Behavior on opacity {
                                 NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
                             }

@@ -125,7 +125,12 @@ Variants {
         }
 
         property bool wallpaperIsVideo: bgRoot.effectiveWallpaperPath.endsWith(".mp4") || bgRoot.effectiveWallpaperPath.endsWith(".webm") || bgRoot.effectiveWallpaperPath.endsWith(".mkv") || bgRoot.effectiveWallpaperPath.endsWith(".avi") || bgRoot.effectiveWallpaperPath.endsWith(".mov")
-        property string wallpaperPath: wallpaperIsVideo ? Config.options.background.thumbnailPath : bgRoot.effectiveWallpaperPath
+        property string wallpaperPath: {
+            if (bgRoot.wallpaperIsVideo) {
+                return Config.options.background.thumbnailPath !== "" ? Config.options.background.thumbnailPath : bgRoot.effectiveWallpaperPath;
+            }
+            return bgRoot.effectiveWallpaperPath;
+        }
         property bool wallpaperSafetyTriggered: {
             const enabled = Config.options.workSafety.enable.wallpaper;
             const sensitiveWallpaper = (CF.StringUtils.stringListContainsSubstring(wallpaperPath.toLowerCase(), Config.options.workSafety.triggerCondition.fileKeywords));
@@ -169,7 +174,57 @@ Variants {
             animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
         }
 
+        // Smart Playback Management (Wallpaper Engine / Lively Wallpaper style efficiency)
+        readonly property bool shouldPlayVideo: bgRoot.wallpaperIsVideo
+            && !bgRoot.wallpaperSafetyTriggered
+            && !bgRoot.hiddenForFullscreen
+            && !GlobalStates.screenLocked
+            && !(Battery.available && Battery.isLowAndNotCharging)
+            && !LiveWallpaper.manualPaused
+
+        onWallpaperIsVideoChanged: {
+            LiveWallpaper.isVideo = bgRoot.wallpaperIsVideo;
+        }
+
+        onShouldPlayVideoChanged: {
+            if (!bgRoot.wallpaperIsVideo) return;
+            if (shouldPlayVideo) {
+                if (videoPlayer.playbackState !== MediaPlayer.PlayingState) {
+                    videoPlayer.play();
+                }
+            } else {
+                if (videoPlayer.playbackState === MediaPlayer.PlayingState) {
+                    videoPlayer.pause();
+                }
+            }
+        }
+
+        Connections {
+            target: LiveWallpaper
+            function onPlayRequested() {
+                if (bgRoot.wallpaperIsVideo) videoPlayer.play();
+            }
+            function onPauseRequested() {
+                if (bgRoot.wallpaperIsVideo) videoPlayer.pause();
+            }
+            function onTogglePlayRequested() {
+                if (!bgRoot.wallpaperIsVideo) return;
+                if (videoPlayer.playbackState === MediaPlayer.PlayingState) {
+                    videoPlayer.pause();
+                } else {
+                    videoPlayer.play();
+                }
+            }
+            function onToggleMuteRequested() {
+                videoAudioOutput.muted = LiveWallpaper.isMuted;
+            }
+            function onVolumeChanged(v) {
+                videoAudioOutput.volume = v;
+            }
+        }
+
         Component.onCompleted: {
+            LiveWallpaper.isVideo = bgRoot.wallpaperIsVideo;
             previousWallpaper.source = ""
             wallpaper.source = bgRoot.wallpaperSafetyTriggered ? "" : bgRoot.wallpaperPath
             bgRoot.currentWallpaperSource = bgRoot.wallpaperPath
@@ -181,6 +236,17 @@ Variants {
                     : bgRoot.wallpaperAnimation
             }
             bgRoot.videoRevealed = bgRoot.wallpaperIsVideo
+            if (bgRoot.shouldPlayVideo) {
+                videoPlayer.play();
+            }
+        }
+
+        function formatVideoUrl(path) {
+            if (!path || path.length === 0) return "";
+            if (path.startsWith("file://") || path.startsWith("http://") || path.startsWith("https://")) {
+                return path;
+            }
+            return "file://" + path;
         }
 
         onEffectiveWallpaperPathChanged: {
@@ -198,8 +264,8 @@ Variants {
                 previousWallpaper.source = ""
                 wallpaper.source = bgRoot.wallpaperPath
                 bgRoot.currentWallpaperSource = bgRoot.wallpaperPath
-                videoPlayer.source = Qt.resolvedUrl(bgRoot.effectiveWallpaperPath)
-                videoPlayer.play()
+                videoPlayer.source = bgRoot.formatVideoUrl(bgRoot.effectiveWallpaperPath)
+                if (bgRoot.shouldPlayVideo) videoPlayer.play()
                 bgRoot.videoRevealed = true
                 bgRoot.transitionProgress = 1.0
                 return
@@ -282,33 +348,56 @@ Variants {
             MediaPlayer {
                 id: videoPlayer
                 source: bgRoot.wallpaperIsVideo && !bgRoot.wallpaperSafetyTriggered
-                    ? Qt.resolvedUrl(bgRoot.effectiveWallpaperPath)
+                    ? bgRoot.formatVideoUrl(bgRoot.effectiveWallpaperPath)
                     : ""
                 loops: MediaPlayer.Infinite
-                audioOutput: null
+                audioOutput: AudioOutput {
+                    id: videoAudioOutput
+                    muted: LiveWallpaper.isMuted
+                    volume: LiveWallpaper.volume
+                }
                 videoOutput: videoOutput
+                onErrorOccurred: (error, errorString) => {
+                    console.log("[Background.qml Video Player Error]", error, errorString);
+                }
+                onMediaStatusChanged: {
+                    if ((mediaStatus === MediaPlayer.LoadedMedia || mediaStatus === MediaPlayer.BufferedMedia) && bgRoot.shouldPlayVideo) {
+                        play();
+                    }
+                }
                 onPlaybackStateChanged: {
-                    if (playbackState === MediaPlayer.StoppedState && bgRoot.wallpaperIsVideo && !bgRoot.wallpaperSafetyTriggered) {
-                        play()
+                    LiveWallpaper.isPlaying = (playbackState === MediaPlayer.PlayingState);
+                    if (playbackState === MediaPlayer.StoppedState && bgRoot.shouldPlayVideo) {
+                        play();
                     }
                 }
                 onSourceChanged: {
-                    if (source.toString().length > 0 && bgRoot.wallpaperIsVideo && !bgRoot.wallpaperSafetyTriggered) {
-                        play()
+                    if (source.toString().length > 0 && bgRoot.shouldPlayVideo) {
+                        play();
                     } else {
-                        stop()
+                        stop();
                     }
                 }
                 Component.onCompleted: {
-                    if (bgRoot.wallpaperIsVideo && !bgRoot.wallpaperSafetyTriggered) play()
+                    if (bgRoot.shouldPlayVideo) play();
                 }
             }
 
-            VideoOutput {
-                id: videoOutput
+            StyledImage {
+                id: wallpaper
                 anchors.fill: parent
-                fillMode: VideoOutput.PreserveAspectCrop
-                visible: bgRoot.wallpaperIsVideo && !blurLoader.active && !bgRoot.wallpaperSafetyTriggered
+                fillMode: Image.PreserveAspectCrop
+                cache: true
+                smooth: true
+                asynchronous: true
+                layer.enabled: true
+                visible: !blurLoader.active && !bgRoot.centeredWallpaperEnabled
+                    && (bgRoot.wallpaperAnimation === "" || bgRoot.transitionProgress >= 1.0)
+                onStatusChanged: {
+                    if (status === Image.Ready && bgRoot.transitionProgress === 0.0) {
+                        transitionAnim.restart()
+                    }
+                }
             }
 
             Image {
@@ -322,21 +411,12 @@ Variants {
                 visible: false
             }
 
-            StyledImage {
-                id: wallpaper
+            VideoOutput {
+                id: videoOutput
                 anchors.fill: parent
-                fillMode: Image.PreserveAspectCrop
-                cache: true
-                smooth: true
-                asynchronous: true
-                layer.enabled: true
-                visible: !blurLoader.active && !bgRoot.centeredWallpaperEnabled && !bgRoot.videoRevealed
-                    && (bgRoot.wallpaperAnimation === "" || bgRoot.transitionProgress >= 1.0)
-                onStatusChanged: {
-                    if (status === Image.Ready && bgRoot.transitionProgress === 0.0) {
-                        transitionAnim.restart()
-                    }
-                }
+                fillMode: VideoOutput.PreserveAspectCrop
+                visible: bgRoot.wallpaperIsVideo && !blurLoader.active && !bgRoot.wallpaperSafetyTriggered && bgRoot.shouldPlayVideo
+                z: 1
             }
 
             ShaderEffect {

@@ -112,7 +112,7 @@ Singleton {
         url += `&units=${units}`
         url += `&appid=${apiKey}`
 
-        let command = `curl -s "${url}"`
+        let command = `curl -s --connect-timeout 5 --max-time 10 "${url}"`
 
         fetcher.command[2] = command
         fetcher.running = true

@@ -109,12 +109,12 @@ Item {
                 GridLayout {
                     id: trayOverflowLayout
                     anchors.centerIn: parent
-                    columns: Math.ceil(Math.sqrt(root.unpinnedItems.length))
+                    columns: Math.ceil(Math.sqrt(Math.max(1, root.unpinnedItems.length)))
                     columnSpacing: 6
                     rowSpacing: 6
 
                     Repeater {
-                        model: root.unpinnedItems
+                        model: ScriptModel { values: root.unpinnedItems }
                         delegate: SysTrayItem {
                             required property SystemTrayItem modelData
                             item: modelData

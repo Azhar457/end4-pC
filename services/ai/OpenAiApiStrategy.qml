@@ -52,7 +52,10 @@ ApiStrategy {
 
             // Error response handling
             if (dataJson.error) {
-                const errorMsg = `**Error**: ${dataJson.error.message || JSON.stringify(dataJson.error)}`;
+                let errorMsg = `\n\n> ⚠️ **Error**: ${dataJson.error.message || JSON.stringify(dataJson.error)}`;
+                if (dataJson.error.code === "rate_limit_exceeded" || dataJson.error.status === 429) {
+                    errorMsg += `\n> *Rate limit reached. Please wait a few moments before retrying.*`;
+                }
                 message.rawContent += errorMsg;
                 message.content += errorMsg;
                 return { finished: true };
@@ -60,8 +63,8 @@ ApiStrategy {
 
             let newContent = "";
 
-            const responseContent = dataJson.choices[0]?.delta?.content || dataJson.message?.content;
-            const responseReasoning = dataJson.choices[0]?.delta?.reasoning || dataJson.choices[0]?.delta?.reasoning_content;
+            const responseContent = dataJson.choices?.[0]?.delta?.content || dataJson.message?.content;
+            const responseReasoning = dataJson.choices?.[0]?.delta?.reasoning || dataJson.choices?.[0]?.delta?.reasoning_content;
 
             if (responseContent && responseContent.length > 0) {
                 if (isReasoning) {
@@ -101,6 +104,12 @@ ApiStrategy {
             
         } catch (e) {
             console.log("[AI] OpenAI: Could not parse line: ", e);
+            if (cleanData.includes("Connection refused") || cleanData.includes("Failed to connect")) {
+                const connErr = `\n\n> ⚠️ **Connection Error**: AI gateway offline (127.0.0.1:20128). Please check 9Router or internet connection.`;
+                message.rawContent += connErr;
+                message.content += connErr;
+                return { finished: true };
+            }
             message.rawContent += line;
             message.content += line;
         }

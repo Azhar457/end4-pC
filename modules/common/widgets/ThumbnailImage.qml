@@ -42,8 +42,10 @@ StyledImage {
         id: thumbnailGeneration
         command: {
             const maxSize = Images.thumbnailSizes[root.thumbnailSizeName];
+            const src = root.sourcePath;
+            const dest = FileUtils.trimFileProtocol(root.thumbnailPath);
             return ["bash", "-c", 
-                `[ -f '${FileUtils.trimFileProtocol(root.thumbnailPath)}' ] && exit 0 || { magick '${root.sourcePath}' -resize ${maxSize}x${maxSize} '${FileUtils.trimFileProtocol(root.thumbnailPath)}' && exit 1; }`
+                `[ -f '${dest}' ] && exit 0; mkdir -p "$(dirname '${dest}')"; case "${src.toLowerCase()}" in *.mp4|*.webm|*.mkv|*.avi|*.mov) ffmpeg -y -loglevel error -ss 00:00:01 -i '${src}' -vframes 1 -vf "scale=${maxSize}:${maxSize}:force_original_aspect_ratio=decrease" '${dest}' && exit 1 ;; *) magick '${src}[0]' -resize ${maxSize}x${maxSize} '${dest}' && exit 1 ;; esac`
             ]
         }
         onExited: (exitCode, exitStatus) => {

@@ -8,6 +8,7 @@ import QtQuick
 import Quickshell
 
 Singleton {
+    id: root
     // XDG Dirs, with "file://"
     readonly property string home: StandardPaths.standardLocations(StandardPaths.HomeLocation)[0]
     readonly property string config: StandardPaths.standardLocations(StandardPaths.ConfigLocation)[0]
@@ -23,6 +24,7 @@ Singleton {
     // Other dirs used by the shell, without "file://"
     property string assetsPath: Quickshell.shellPath("assets")
     property string scriptPath: Quickshell.shellPath("scripts")
+    property alias scriptsPath: root.scriptPath
     property string favicons: FileUtils.trimFileProtocol(`${Directories.cache}/media/favicons`)
     property string coverArt: FileUtils.trimFileProtocol(`${Directories.cache}/media/coverart`)
     property string tempImages: "/tmp/quickshell/media/images"

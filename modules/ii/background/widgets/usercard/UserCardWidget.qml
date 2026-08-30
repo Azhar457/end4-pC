@@ -258,9 +258,10 @@ AbstractBackgroundWidget {
                     anchors.fill: parent
                     visible: false
 
+                    property bool isVideo: /\.(mp4|webm|mkv|avi|mov)$/i.test(Config.options.background.wallpaperPath)
                     property string effectiveSource: "file://" + (GlobalStates.screenLocked && Config.options.background.lockWall !== ""
                         ? Config.options.background.lockWall
-                        : Config.options.background.wallpaperPath)
+                        : (isVideo ? (Config.options.background.thumbnailPath || Config.options.background.wallpaperPath) : Config.options.background.wallpaperPath))
 
                     Image {
                         id: bgImageA

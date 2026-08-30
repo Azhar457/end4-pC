@@ -170,9 +170,13 @@ switch() {
     colors_only_flag="$6"
     colors_lock_flag="$7"
 
-    aiStylingEnabled=$(jq -r '.background.widgets.clock.cookie.aiStyling' "$SHELL_CONFIG_FILE")
-    if [[ "$aiStylingEnabled" == "true" && -z "$colors_only_flag" ]]; then
-        categorize_wallpaper "$imgpath" &
+    if is_video "$imgpath"; then
+        echo "[switchwall.sh] Video wallpaper detected ($imgpath). Skipping AI categorize."
+    else
+        aiStylingEnabled=$(jq -r '.background.widgets.clock.cookie.aiStyling' "$SHELL_CONFIG_FILE" 2>/dev/null || echo "false")
+        if [[ "$aiStylingEnabled" == "true" && -z "$colors_only_flag" ]]; then
+            categorize_wallpaper "$imgpath" &
+        fi
     fi
 
     read scale screenx screeny screensizey < <(hyprctl monitors -j | jq '.[] | select(.focused) | .scale, .x, .y, .height' | xargs)
@@ -216,8 +220,8 @@ switch() {
             mkdir -p "$THUMBNAIL_DIR"
 
             thumbnail="$THUMBNAIL_DIR/$(basename "$imgpath").jpg"
-            if command -v ffmpeg &> /dev/null; then
-                ffmpeg -y -i "$imgpath" -vframes 1 "$thumbnail" 2>/dev/null
+            if [[ ! -f "$thumbnail" ]] && command -v ffmpeg &> /dev/null; then
+                ffmpeg -y -loglevel error -ss 00:00:01 -i "$imgpath" -vframes 1 -q:v 2 "$thumbnail" 2>/dev/null
             fi
 
             if [[ -z "$colors_only_flag" ]]; then
@@ -364,6 +368,10 @@ main() {
 
     detect_scheme_type_from_image() {
         local img="$1"
+        if is_video "$img"; then
+            echo "scheme-tonal-spot"
+            return
+        fi
         source "$(eval echo $ILLOGICAL_IMPULSE_VIRTUAL_ENV)/bin/activate"
         "$SCRIPT_DIR"/scheme_for_image.py "$img" 2>/dev/null | tr -d '\n'
         deactivate

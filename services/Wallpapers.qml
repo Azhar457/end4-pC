@@ -44,6 +44,15 @@ Singleton {
 
     function stopPreview() {
         root.previewPath = "";
+        root.confirmedPath = "";
+    }
+
+    Connections {
+        target: Config.options.background
+        function onWallpaperPathChanged() {
+            root.confirmedPath = "";
+            root.previewPath = "";
+        }
     }
 
     // Executions

@@ -42,9 +42,10 @@ ContentPage {
     }
 
     function displayPathFor(path) {
-        return /\.(mp4|webm|mkv|avi|mov)$/i.test(path)
-            ? Config.options.background.thumbnailPath
-            : path
+        if (/\.(mp4|webm|mkv|avi|mov)$/i.test(path)) {
+            return Config.options.background.thumbnailPath !== "" ? Config.options.background.thumbnailPath : path;
+        }
+        return path;
     }
 
     ColumnLayout {
