@@ -14,11 +14,21 @@ MouseArea {
     property bool isMaterial: Config.options.bar.cornerStyle === 3
     property bool borderless: Config.options.bar.borderless
 
-    implicitWidth: vertical ? Appearance.sizes.verticalBarWidth : (contentLoader.item?.implicitWidth ?? 0) 
+    implicitWidth: vertical ? Appearance.sizes.verticalBarWidth : (contentLoader.item?.implicitWidth ?? 0)
     implicitHeight: vertical ? (contentLoader.item?.implicitHeight ?? 0) : Appearance.sizes.barHeight
 
     cursorShape: Qt.PointingHandCursor
     acceptedButtons: Qt.LeftButton | Qt.RightButton
+    hoverEnabled: true
+
+    ToolTip.visible: hovered
+    ToolTip.delay: 350
+    ToolTip.text: Updates.count === 0
+        ? Translation.tr("System is up to date")
+        : Translation.tr("%1 updates (%2 system, %3 flatpak)")
+            .arg(Updates.count)
+            .arg(Updates.systemCount)
+            .arg(Updates.flatpakCount)
 
     onClicked: (mouse) => {
         if (mouse.button === Qt.LeftButton) {

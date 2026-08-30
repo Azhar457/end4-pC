@@ -15,7 +15,9 @@ Singleton {
     property bool available: false
     property alias checking: checkUpdatesProc.running
     property int count: 0
-    
+    property int systemCount: 0
+    property int flatpakCount: 0
+
     readonly property bool updateAdvised: available && count > Config.options.updates.adviseUpdateThreshold
     readonly property bool updateStronglyAdvised: available && count > Config.options.updates.stronglyAdviseUpdateThreshold
 
@@ -51,13 +53,25 @@ Singleton {
         command: [`${Directories.scriptPath}/system/check_updates.sh`]
         stdout: StdioCollector {
             onStreamFinished: {
-                let parsed = parseInt(text.trim());
-                root.count = isNaN(parsed) ? 0 : parsed;
+                // Script emits 3 lines: system=N  flatpak=N  total=N
+                let sys = 0, fp = 0, tot = 0;
+                for (const line of text.split("\n")) {
+                    const m = line.match(/^(system|flatpak|total)\s*=\s*(\d+)/);
+                    if (!m) continue;
+                    if (m[1] === "system")  sys = parseInt(m[2]) || 0;
+                    if (m[1] === "flatpak") fp  = parseInt(m[2]) || 0;
+                    if (m[1] === "total")   tot = parseInt(m[2]) || 0;
+                }
+                root.systemCount  = sys;
+                root.flatpakCount = fp;
+                root.count        = tot;
             }
         }
         onExited: (exitCode, exitStatus) => {
             if (exitCode !== 0) {
                 root.count = 0;
+                root.systemCount = 0;
+                root.flatpakCount = 0;
             }
         }
     }
