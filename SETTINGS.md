@@ -79,21 +79,34 @@ Daftar nama widget yang tersedia:
 
 ### Skema Kunci di `~/.config/illogical-impulse/config.json`:
 - **`appearance`**:
-  - `palette.type`: Jenis palet (`"auto"`, `"scheme-tonal-spot"`, `"scheme-expressive"`, dll.)
-  - `palette.accentColor`: Hex custom accent color (string kosong jika mengikuti wallpaper)
-  - `transparency.enable`: Aktifkan transparansi Material 3
+  - `palette.type`: Jenis palet (`"auto"`, `"scheme-tonal-spot"`, `"scheme-expressive"`, `"scheme-monochrome"`, `"scheme-fidelity"`, `"scheme-neutral"`, `"scheme-rainbow"`)
+  - `palette.accentColor`: Hex custom accent color (string kosong `""` jika mengikuti wallpaper, atau format `"#RRGGBB"`)
+  - `transparency.enable`: Aktifkan transparansi Material 3 (`true`/`false`)
 - **`background`**:
-  - `wallpaperPath`: Path wallpaper saat ini
-  - `widgets.aiAgent.enable`: Toggle widget Desktop AI Agent
-  - `widgets.clock.enable`: Toggle widget Jam desktop
-  - `widgets.todo.enable`: Toggle widget To-Do
-  - `widgets.media.enable`: Toggle widget Media player
-- **`bar`**:
-  - Konfigurasi Bar Island, tray, workspacelist, corner styles.
+  - `wallpaperPath`: Path wallpaper aktif saat ini
+  - `widgets.<widgetName>.enable`: Mengaktifkan / menonaktifkan widget (Hot-reload otomatis!)
+- **`bar`** (Taskbar / Top Bar):
+  - `autoHide.enable`: Sembunyikan bar otomatis (`true` / `false`)
+  - `autoHide.pushWindows`: Mendorong window saat bar muncul (`true` / `false`)
+  - `bottom`: Posisi bar (`true`: Bawah / Taskbar, `false`: Atas / Topbar)
+  - `cornerStyle`: Gaya sudut bar (`0`: Default, `1`: Small, `2`: Medium, `3`: Full Round)
+  - `showBackground`: Background bar (`true` / `false`)
 
 ---
 
-## 🛠️ 4. Tools & Perintah Pemeliharaan Shell
+## 💻 5. Contoh Tindakan Konkret yang Sering Diminta:
+
+1. **Ubah Taskbar jadi Auto-Hide**:
+   Edit `~/.config/illogical-impulse/config.json` -> set `"bar"."autoHide"."enable": true`.
+2. **Ganti Warna Aksen**:
+   Jalankan: `~/.config/quickshell/end4-pC/scripts/colors/switchwall.sh --color "#FF5722"`
+   Atau edit `~/.config/illogical-impulse/config.json` -> `"appearance"."palette"."accentColor": "#FF5722"`.
+3. **Disable / Enable Semua Background Widget**:
+   Edit `~/.config/illogical-impulse/config.json` -> loop `"background"."widgets"` -> set `"enable": false` (kecuali `"aiAgent"` jika ingin chat tetap ada). Hot-reload otomatis aktif seketika!
+
+---
+
+## 🛠️ 6. Tools & Perintah Pemeliharaan Shell
 
 ```bash
 # Deploy perubahan dari repo ke live config

@@ -365,14 +365,32 @@ AbstractBackgroundWidget {
 		}
 
 		function respond(approved) {
-			if (!running || !awaitingApproval || !awaitingApprovalId) return;
-			const resp = {
-				type: approved ? "approve" : "deny",
-				id: awaitingApprovalId
-			};
+			const reqId = awaitingApprovalId;
 			awaitingApproval = false;
 			awaitingApprovalId = "";
-			write(JSON.stringify(resp) + "\n");
+
+			// Clean up UI approval state in messageModel immediately
+			for (let i = 0; i < messageModel.count; i++) {
+				const item = messageModel.get(i);
+				if (item.awaitingApproval) {
+					messageModel.setProperty(i, "awaitingApproval", false);
+					if (!approved) {
+						messageModel.setProperty(i, "toolResult", "Tool execution was denied by user.");
+						messageModel.setProperty(i, "isToolError", true);
+						messageModel.setProperty(i, "isRunningTool", false);
+					}
+				}
+			}
+			root.updateActiveStats();
+
+			if (running && reqId) {
+				const resp = {
+					type: approved ? "approve" : "deny",
+					id: reqId
+				};
+				write(JSON.stringify(resp) + "\n");
+			}
+			root.saveSessionsToDisk();
 		}
 
 		stdout: SplitParser {
@@ -1173,6 +1191,19 @@ AbstractBackgroundWidget {
 								if (root.isBusy) {
 									agentProcess.running = false;
 									agentProcess.isExecuting = false;
+									agentProcess.awaitingApproval = false;
+									agentProcess.awaitingApprovalId = "";
+									for (let i = 0; i < messageModel.count; i++) {
+										const item = messageModel.get(i);
+										if (item.awaitingApproval || item.isRunningTool) {
+											messageModel.setProperty(i, "awaitingApproval", false);
+											messageModel.setProperty(i, "isRunningTool", false);
+											messageModel.setProperty(i, "isToolError", true);
+											messageModel.setProperty(i, "toolResult", "Execution cancelled by user.");
+										}
+									}
+									root.updateActiveStats();
+									root.saveSessionsToDisk();
 								} else {
 									root.executePrompt(inputArea.text);
 								}
