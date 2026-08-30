@@ -40,6 +40,19 @@ Singleton {
         { title: "Bluetooth Indicator", page: 2, pageName: "bar", term: "bluetooth", keywords: "bluetooth wireless connect device" },
         { title: "Network Speed Widget", page: 2, pageName: "bar", term: "network", keywords: "network speed internet wifi throughput" },
         { title: "System Tray (SysTray)", page: 2, pageName: "bar", term: "tray", keywords: "tray systray icons status applet" },
+        // Generic umbrella entry for 'utili' / 'util' / 'utilb' / 'utilbutton'
+        { title: "Utility Buttons (Bar)", page: 2, pageName: "bar", term: "utility", keywords: "utilities util utili utilb utilbutton systray tray helper shortcut quick color picker screen snip screenshot record video dark light mode mic microphone wallpaper image" },
+        { title: "Show Color Picker (Util Button)", page: 2, pageName: "bar", term: "showColorPicker", keywords: "colorpicker showcolorpicker color picker util utilb colorize hyprpicker hex" },
+        { title: "Show Screen Snip (Util Button)", page: 2, pageName: "bar", term: "showScreenSnip", keywords: "showscreensnip snip screenshot region util utilb grim slurp rectangle capture" },
+        { title: "Show Microphone Toggle (Util Button)", page: 2, pageName: "bar", term: "showMicToggle", keywords: "showmictoggle mic microphone mute unmute util utilb pipewire" },
+        { title: "Show Keyboard Toggle (Util Button)", page: 2, pageName: "bar", term: "showKeyboardToggle", keywords: "showkeyboardtoggle onboard osk virtual keyboard util utilb" },
+        { title: "Show Wallpaper Toggle (Util Button)", page: 2, pageName: "bar", term: "showWallpaperToggle", keywords: "showwallpapertoggle wallpaper util utilb picker background" },
+        { title: "Show Dark Mode Toggle (Util Button)", page: 2, pageName: "bar", term: "showDarkModeToggle", keywords: "showdarkmodetoggle dark light mode toggle theme util utilb appearance m3" },
+        { title: "Show Performance Profile Toggle (Util Button)", page: 2, pageName: "bar", term: "showPerformanceProfileToggle", keywords: "showperformanceprofiletoggle performance profile power util utilb" },
+        { title: "Show Screen Record (Util Button)", page: 2, pageName: "bar", term: "showScreenRecord", keywords: "showscreenrecord record video util utilb wf-recorder wf rec" },
+        { title: "Show Image Picker (Util Button)", page: 2, pageName: "bar", term: "imagepicker", keywords: "image picker util utilb imagepicker screenshot upload copy select" },
+        { title: "Snip Region / Screenshot", page: 2, pageName: "bar", term: "screenshot", keywords: "snip screenshot region util utilb grim slurp capture" },
+        { title: "Wallpaper Picker (Bar Button)", page: 2, pageName: "bar", term: "wallpaperpicker", keywords: "wallpaper util utilb picker background image" },
 
         // Desktop (page 3)
         { title: "Wallpaper & Background", page: 3, pageName: "desktop", term: "wallpaper", keywords: "wallpaper image background picture showcase live video gif animated mp4 webm" },

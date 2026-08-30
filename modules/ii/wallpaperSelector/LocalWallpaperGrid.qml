@@ -172,6 +172,7 @@ Item {
                     contextMenu.targetPath = modelData.filePath;
                     contextMenu.visible = true;
                 } else {
+                    grid.currentIndex = index;
                     root.activated();
                 }
             }

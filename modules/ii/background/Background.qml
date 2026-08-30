@@ -124,7 +124,12 @@ Variants {
             return Wallpapers.previewPath || Wallpapers.confirmedPath || Config.options.background.wallpaperPath;
         }
 
-        property bool wallpaperIsVideo: bgRoot.effectiveWallpaperPath.endsWith(".mp4") || bgRoot.effectiveWallpaperPath.endsWith(".webm") || bgRoot.effectiveWallpaperPath.endsWith(".mkv") || bgRoot.effectiveWallpaperPath.endsWith(".avi") || bgRoot.effectiveWallpaperPath.endsWith(".mov")
+        property bool wallpaperIsVideo: {
+            const p = (bgRoot.effectiveWallpaperPath || "").toLowerCase();
+            return p.endsWith(".mp4") || p.endsWith(".webm") || p.endsWith(".mkv")
+                || p.endsWith(".avi") || p.endsWith(".mov") || p.endsWith(".gif")
+                || p.endsWith(".m4v");
+        }
         property string wallpaperPath: {
             if (bgRoot.wallpaperIsVideo) {
                 return Config.options.background.thumbnailPath !== "" ? Config.options.background.thumbnailPath : bgRoot.effectiveWallpaperPath;
