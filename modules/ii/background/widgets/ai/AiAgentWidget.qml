@@ -1220,98 +1220,7 @@ AbstractBackgroundWidget {
 							font.pixelSize: Appearance.font.pixelSize.small
 							font.weight: Font.Bold
 							color: Appearance.colors.colPrimary
-							text: "LLM Provider:"
-						}
-
-						RowLayout {
-							Layout.fillWidth: true
-							spacing: 6
-
-							Repeater {
-								model: [
-									{ id: "opencode", label: "🌟 OpenCode" },
-									{ id: "9router",  label: "🚀 9Router" },
-									{ id: "ollama",   label: "🦙 Ollama" },
-									{ id: "custom",   label: "🌐 Custom" }
-								]
-								delegate: Rectangle {
-									required property var modelData
-									implicitHeight: 32
-									Layout.fillWidth: true
-									radius: Appearance.rounding.small
-									color: (Config.options.background.widgets.aiAgent.provider === modelData.id)
-										? Appearance.colors.colPrimary
-										: Appearance.colors.colLayer1
-									border.width: 1
-									border.color: (Config.options.background.widgets.aiAgent.provider === modelData.id)
-										? Appearance.colors.colPrimary
-										: Appearance.colors.colLayer0Border
-
-									StyledText {
-										anchors.centerIn: parent
-										font.pixelSize: Appearance.font.pixelSize.smaller
-										font.weight: Font.Medium
-										color: (Config.options.background.widgets.aiAgent.provider === modelData.id)
-											? Appearance.colors.colOnPrimary
-											: Appearance.colors.colOnLayer0
-										text: modelData.label
-									}
-
-									MouseArea {
-										anchors.fill: parent
-										cursorShape: Qt.PointingHandCursor
-										onClicked: {
-											Config.options.background.widgets.aiAgent.provider = modelData.id;
-											if (modelData.id === "opencode") {
-												Config.options.background.widgets.aiAgent.model = "hy3-free";
-											} else if (modelData.id === "9router") {
-												Config.options.background.widgets.aiAgent.model = "ag/claude-sonnet-4-6";
-											}
-											root.fetchLiveModels();
-										}
-									}
-								}
-							}
-						}
-
-						RowLayout {
-							Layout.fillWidth: true
-							spacing: 6
-
-							StyledText {
-								Layout.fillWidth: true
-								font.pixelSize: Appearance.font.pixelSize.small
-								font.weight: Font.Bold
-								color: Appearance.colors.colPrimary
-								text: "Select Model (Live Dropdown & Search):"
-							}
-
-							ToolbarPairedFab {
-								baseSize: 26
-								iconText: "refresh"
-								onClicked: root.fetchLiveModels()
-							}
-						}
-
-						// Live Model Dropdown if fetched
-						StyledComboBoxSearch {
-							id: liveModelCombo
-							Layout.fillWidth: true
-							visible: root.availableModelsList.length > 0
-							model: root.availableModelsList
-							displayText: Config.options.background.widgets.aiAgent.model || (root.availableModelsList.length > 0 ? root.availableModelsList[0] : "Select model...")
-							onActivated: (idx) => {
-								if (idx >= 0 && idx < root.availableModelsList.length) {
-									Config.options.background.widgets.aiAgent.model = root.availableModelsList[idx];
-								}
-							}
-						}
-
-						StyledText {
-							font.pixelSize: Appearance.font.pixelSize.small
-							font.weight: Font.Bold
-							color: Appearance.colors.colPrimary
-							text: "Quick Presets & Manual Model ID:"
+							text: "OpenCode Zen Model Presets (Free):"
 						}
 
 						// Preset model quick chips
@@ -1319,27 +1228,26 @@ AbstractBackgroundWidget {
 							Layout.fillWidth: true
 							spacing: 6
 
-							property var currentPresets: {
-								const p = Config.options.background.widgets.aiAgent.provider || "opencode";
-								if (p === "opencode") return ["hy3-free", "nemotron-3.5-lightning-free", "ling-3.0-flash-fin-free", "qwen2.5-72b-instruct"];
-								if (p === "9router") return ["ag/gemini-3.7-flash-high", "ag/claude-sonnet-4-6", "ag/deepseek-r1", "ag/gpt-4o"];
-								if (p === "ollama") return ["qwen2.5:3b-instruct", "llama3.2:3b", "deepseek-r1:7b"];
-								return [];
-							}
+							property var currentPresets: [
+								"hy3-free",
+								"nemotron-3.5-lightning-free",
+								"ling-3.0-flash-fin-free",
+								"qwen2.5-72b-instruct"
+							]
 
 							Repeater {
 								model: parent.currentPresets
 								delegate: Rectangle {
 									required property var modelData
-									implicitHeight: 26
-									implicitWidth: chipText.implicitWidth + 16
+									implicitHeight: 28
+									implicitWidth: chipText.implicitWidth + 18
 									radius: Appearance.rounding.full
 									color: (Config.options.background.widgets.aiAgent.model === modelData)
-										? Appearance.colors.colSecondaryContainer
+										? Appearance.colors.colPrimary
 										: Appearance.colors.colLayer1
 									border.width: 1
 									border.color: (Config.options.background.widgets.aiAgent.model === modelData)
-										? Appearance.colors.colSecondary
+										? Appearance.colors.colPrimary
 										: Appearance.colors.colLayer0Border
 
 									StyledText {
@@ -1348,7 +1256,7 @@ AbstractBackgroundWidget {
 										font.pixelSize: Appearance.font.pixelSize.smaller
 										font.weight: Font.Medium
 										color: (Config.options.background.widgets.aiAgent.model === modelData)
-											? Appearance.colors.colOnSecondaryContainer
+											? Appearance.colors.colOnPrimary
 											: Appearance.colors.colOnLayer0
 										text: modelData
 									}
@@ -1357,11 +1265,20 @@ AbstractBackgroundWidget {
 										anchors.fill: parent
 										cursorShape: Qt.PointingHandCursor
 										onClicked: {
+											Config.options.background.widgets.aiAgent.provider = "opencode";
 											Config.options.background.widgets.aiAgent.model = modelData;
+											Config.options.background.widgets.aiAgent.endpoint = "https://opencode.ai/zen/v1/chat/completions";
 										}
 									}
 								}
 							}
+						}
+
+						StyledText {
+							font.pixelSize: Appearance.font.pixelSize.small
+							font.weight: Font.Bold
+							color: Appearance.colors.colPrimary
+							text: "Model Identifier:"
 						}
 
 						Rectangle {
@@ -1385,7 +1302,31 @@ AbstractBackgroundWidget {
 							font.pixelSize: Appearance.font.pixelSize.small
 							font.weight: Font.Bold
 							color: Appearance.colors.colPrimary
-							text: "API Key (optional for OpenCode Free):"
+							text: "Endpoint URL (Default: OpenCode Zen Free):"
+						}
+
+						Rectangle {
+							Layout.fillWidth: true
+							implicitHeight: 38
+							radius: Appearance.rounding.small
+							color: Appearance.colors.colLayer1
+							border.width: 1
+							border.color: Appearance.colors.colLayer0Border
+
+							TextInput {
+								anchors { fill: parent; margins: 8 }
+								color: Appearance.colors.colOnLayer0
+								font.pixelSize: Appearance.font.pixelSize.normal
+								text: Config.options.background.widgets.aiAgent.endpoint ?? "https://opencode.ai/zen/v1/chat/completions"
+								onTextChanged: Config.options.background.widgets.aiAgent.endpoint = text
+							}
+						}
+
+						StyledText {
+							font.pixelSize: Appearance.font.pixelSize.small
+							font.weight: Font.Bold
+							color: Appearance.colors.colPrimary
+							text: "API Key (Optional for OpenCode Free):"
 						}
 
 						Rectangle {
