@@ -672,7 +672,7 @@ Singleton {
             // console.log("Header string: ", headerString);
 
             /* Get authorization header from strategy */
-            const authHeader = requester.currentStrategy.buildAuthorizationHeader(root.apiKeyEnvVarName);
+            const authHeader = (model?.requires_key) ? requester.currentStrategy.buildAuthorizationHeader(root.apiKeyEnvVarName) : "";
             
             /* Script shebang */
             const scriptShebang = "#!/usr/bin/env bash\n";

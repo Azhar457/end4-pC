@@ -130,18 +130,19 @@ export async function executeTool(toolName, args = {}, onDelta = () => {}) {
 				const timeout = args.timeoutMs || 30000;
 				const cwd = args.cwd || process.env.HOME || "/tmp";
 				const { stdout, stderr } = await execAsync(cmd, { timeout, cwd, maxBuffer: 1024 * 1024 * 8 });
-				const res = (stdout || "") + (stderr ? `\n[stderr]: ${stderr}` : "");
-				return res.trim() || "(Command completed with no output)";
+				const res = ((stdout || "") + (stderr ? `\n[stderr]: ${stderr}` : "")).trim();
+				if (!res) return "(Command completed with no output)";
+				return res.length > 2000 ? (res.slice(0, 2000) + `\n... (truncated, total ${res.length} chars)`) : res;
 			}
 			case "file_read": {
 				const fullPath = path.resolve(args.filePath.replace(/^~/, os.homedir()));
 				const content = await fs.readFile(fullPath, "utf-8");
-				const maxLines = args.maxLines || 500;
+				const maxLines = args.maxLines || 100;
 				const lines = content.split("\n");
 				if (lines.length > maxLines) {
 					return lines.slice(0, maxLines).join("\n") + `\n\n... (truncated ${lines.length - maxLines} lines)`;
 				}
-				return content;
+				return content.length > 2500 ? (content.slice(0, 2500) + `\n\n... (truncated)`) : content;
 			}
 			case "file_write": {
 				const fullPath = path.resolve(args.filePath.replace(/^~/, os.homedir()));
@@ -265,8 +266,8 @@ Key Architectural Context of end4-pC:
 Guidelines:
 1. Always be direct, friendly, and practical in Indonesian or English (matching the user's language).
 2. Point users directly to the right setting or file path when asked how to customize or fix something.
-3. Use tool calls (like reading configs or running simple safe commands) when needed to assist the user.
-4. Keep explanations concise and clear.`;
+3. Be ultra-efficient with tools: DO NOT explore randomly or make repetitive tool calls. If asked to change wallpaper/theme, simply execute the single command (e.g. switchwall.sh --mode dark) or tell the user how to do it. Use at most 1-2 tool calls per user turn.
+4. Keep explanations concise, clear, and actionable.`;
 }
 
 // ─── LLM STREAMING CLIENT ────────────────────────────────────────────────────
@@ -481,7 +482,7 @@ export async function runAgentLoop({
 		{ role: "user", content: prompt }
 	];
 
-	const maxTurns = 6;
+	const maxTurns = 3;
 	for (let turn = 0; turn < maxTurns; turn++) {
 		sendEvent({ type: "turn_start", turn: turn + 1 });
 		sendEvent({ type: "log", level: "info", text: `🔄 Turn ${turn + 1}/${maxTurns}: sending context (${messages.length} messages) to ${endpoint}...` });
