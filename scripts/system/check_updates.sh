@@ -22,10 +22,12 @@ elif command -v checkupdates &>/dev/null; then
 fi
 sys_count=${sys_count:-0}
 
-# --- Flatpak: parse one entry per non-empty line that contains a tab (real rows) ---
+# --- Flatpak: check flathub system + user (avoids Fedora OCI registry false-positives) ---
 fp_count=0
 if command -v flatpak &>/dev/null; then
-    fp_count=$(flatpak remote-ls --updates 2>/dev/null | awk -F'\t' 'NF >= 4 {c++} END {print c+0}')
+    fp_sys=$(flatpak remote-ls --system --updates flathub 2>/dev/null | awk -F'\t' 'NF >= 4 {c++} END {print c+0}' || echo 0)
+    fp_usr=$(flatpak remote-ls --user --updates flathub 2>/dev/null | awk -F'\t' 'NF >= 4 {c++} END {print c+0}' || echo 0)
+    fp_count=$(( ${fp_sys:-0} + ${fp_usr:-0} ))
 fi
 fp_count=${fp_count:-0}
 
