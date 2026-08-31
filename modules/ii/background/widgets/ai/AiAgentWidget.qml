@@ -898,7 +898,7 @@ AbstractBackgroundWidget {
 									font.family: Appearance.font.family.monospace
 									color: Appearance.colors.colOnTertiaryContainer
 									wrapMode: Text.WrapAnywhere
-									text: JSON.stringify(messageDelegate.toolInput, null, 2)
+									text: JSON.stringify(messageDelegate.toolInput ?? {}, null, 2)
 								}
 
 								RowLayout {

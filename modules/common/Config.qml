@@ -13,6 +13,23 @@ Singleton {
     property int readWriteDelay: 50 // milliseconds
     property bool blockWrites: false
 
+    // Reload the config from disk. Public API so the wallpaper selector
+    // (and other callers that change Config.options.background.*) can
+    // force the in-memory state to reflect the latest file contents.
+    // Necessary because some tools (the in-app 'Update Dots', external
+    // `switchwall.sh`, `jq`, the opencode agent) write the file with
+    // an atomic rename (write to tmp + mv), which bypasses the
+    // FileView's inotify watcher on the original inode. Without an
+    // explicit reload, the in-memory Config stays stale (e.g.
+    // wallpaperPath still equals the old 'galaxy' default even after
+    // the user picked a video), and the desktop reverts to that
+    // stale value.
+    function reload() {
+        if (typeof configFileView !== "undefined") {
+            configFileView.reload();
+        }
+    }
+
     function setNestedValue(nestedKey, value) {
         let keys = nestedKey.split(".");
         let obj = root.options;

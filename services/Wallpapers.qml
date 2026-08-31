@@ -76,6 +76,21 @@ Singleton {
 
     function apply(path, darkMode = Appearance.m3colors.darkmode) {
         if (!path || path.length === 0) return;
+        // Persist into the Quickshell Config so the wallpaper survives
+        // restarts and is visible to Background.qml, the settings page,
+        // and the wallpaper selector preview. Without this line, the
+        // shell's own Config (used by the MediaPlayer, the settings
+        // preview, the right-click menu) never reflects the selection,
+        // so the wallpaper appears not to change and the play button
+        // has no source to play.
+        Config.options.background.wallpaperPath = path;
+        // Force a reload from disk so the in-memory Config reflects
+        // the latest file content (defensive against the inotify
+        // atomic-rename miss). Without this, an external write to
+        // the JSON file can leave the shell's Config stale (e.g.
+        // wallpaperPath still equals the old 'galaxy' default even
+        // though the file now has the newly-picked video).
+        Config.reload();
         root.confirmedPath = path;
         Quickshell.execDetached([Directories.wallpaperSwitchScriptPath, "--mode", darkMode ? "dark" : "light", "--image", path]);
         root.changed()

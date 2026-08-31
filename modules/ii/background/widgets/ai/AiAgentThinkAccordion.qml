@@ -70,7 +70,7 @@ Rectangle {
             Layout.fillWidth: true
             implicitHeight: Math.min(180, thinkText.implicitHeight + 16)
             visible: root.expanded
-            radius: Appearance.rounding.smaller
+            radius: Appearance.rounding.small
             color: "#1e1e2e"
             clip: true
 

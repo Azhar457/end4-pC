@@ -21,15 +21,6 @@ MouseArea {
     acceptedButtons: Qt.LeftButton | Qt.RightButton
     hoverEnabled: true
 
-    ToolTip.visible: hovered
-    ToolTip.delay: 350
-    ToolTip.text: Updates.count === 0
-        ? Translation.tr("System is up to date")
-        : Translation.tr("%1 updates (%2 system, %3 flatpak)")
-            .arg(Updates.count)
-            .arg(Updates.systemCount)
-            .arg(Updates.flatpakCount)
-
     onClicked: (mouse) => {
         if (mouse.button === Qt.LeftButton) {
             updateProc.running = true

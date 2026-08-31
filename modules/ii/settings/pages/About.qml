@@ -24,30 +24,20 @@ ContentPage {
     }
 
     function runUpdateDots() {
-        const updateScript = `
-            set -e
-            DIR="$HOME/.config/quickshell"
-
-            # Download to temp first
-            rm -rf "$DIR/end4-pC-tmp"
-            git clone https://github.com/Azhar457/end4-pC.git "$DIR/end4-pC-tmp"
-
-            # Apply update
-            rm -rf "$DIR/end4-pC-old"
-            [ -d "$DIR/end4-pC" ] && mv "$DIR/end4-pC" "$DIR/end4-pC-old"
-            mv "$DIR/end4-pC-tmp" "$DIR/end4-pC"
-
-            # Reload
-            killall qs 2>/dev/null || true
-            sleep 0.5
-            setsid qs -c end4-pC >/tmp/qs.log 2>&1 < /dev/null &
-            disown
-
-            # Cleanup
-            rm -rf "$DIR/end4-pC-old"
-        `
-
-        Quickshell.execDetached(["kitty", "--hold", "bash", "-c", updateScript])
+        // Safe in-place update of the end4-pC fork. Replaces the previous
+        // destructive `git clone + mv + rm -rf` flow that silently
+        // destroyed the user's working tree on every click (uncommitted
+        // edits, untracked files like the agent / rice-doctor / custom
+        // wallpapers, and unpushed local commits were all lost). The new
+        // flow lives in scripts/system/update-fork.sh: it stashes local
+        // uncommitted + untracked work, fast-forwards or rebases onto
+        // origin/<branch>, pops the stash, and only then restarts qs.
+        // It never deletes the working tree, so the user's data survives
+        // every "Update Dots" click.
+        const scriptPath = `${Directories.scriptPath}/system/update-fork.sh`;
+        Quickshell.execDetached(["kitty", "--hold", "bash", "-c",
+            `REPO_DIR='$HOME/.config/quickshell/end4-pC' '${scriptPath}'`
+        ])
         Qt.callLater(() => GlobalStates.settingsOpen = false)
     }
 

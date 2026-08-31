@@ -1,0 +1,18 @@
+[Unit]
+Description=Restore end4-pC fork tracked files from HEAD every 30s
+Documentation=file://%h/.config/quickshell/end4-pC/scripts/system/stabilize-fork.sh
+# This timer is the recursive-stability answer for the end4-pC shell:
+# it undoes in-session reverts to tracked files (e.g. by an AI coding
+# agent with a filesystem MCP) without touching untracked user data
+# (the agent/, rice-doctor, .backups/, custom wallpapers, etc.).
+# Pair with stabilize-fork.service.
+
+[Service]
+Type=oneshot
+# Run as the user so the repo checkout / git operations work with the
+# user's existing credentials and XDG dirs.
+ExecStart=%h/.config/quickshell/end4-pC/scripts/system/stabilize-fork.sh
+# If the script is missing or the repo was deleted, exit cleanly.
+SuccessExitStatus=0 1
+PrivateTmp=false
+NoBlock=true

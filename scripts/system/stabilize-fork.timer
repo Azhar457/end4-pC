@@ -1,0 +1,16 @@
+[Unit]
+Description=Periodic end4-pC fork stabilizer (every 30s)
+Documentation=file://%h/.config/quickshell/end4-pC/scripts/system/stabilize-fork.sh
+
+[Timer]
+# Run every 30 seconds. The stabilizer is a no-op when no tracked file
+# differs from HEAD, so this is cheap. A 2-second "mid-write" safety
+# margin inside the script means edits that complete within 2 seconds
+# are not interrupted, so a 30-second cadence is a good balance.
+OnBootSec=10s
+OnUnitActiveSec=30s
+AccuracySec=1s
+Unit=stabilize-fork.service
+
+[Install]
+WantedBy=timers.target

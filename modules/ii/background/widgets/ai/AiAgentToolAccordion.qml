@@ -110,7 +110,7 @@ Rectangle {
             Rectangle {
                 Layout.fillWidth: true
                 implicitHeight: inputCol.implicitHeight + 12
-                radius: Appearance.rounding.smaller
+                radius: Appearance.rounding.small
                 color: "#1e293b"
 
                 ColumnLayout {
@@ -136,7 +136,7 @@ Rectangle {
                         font.family: Appearance.font.family.monospace
                         color: "#f1f5f9"
                         wrapMode: Text.WrapAnywhere
-                        text: JSON.stringify(toolInput, null, 2)
+                        text: JSON.stringify(toolInput ?? {}, null, 2)
                     }
                 }
             }
@@ -145,7 +145,7 @@ Rectangle {
             Rectangle {
                 Layout.fillWidth: true
                 implicitHeight: Math.min(200, outputText.implicitHeight + 16)
-                radius: Appearance.rounding.smaller
+                radius: Appearance.rounding.small
                 color: "#0f172a"
                 clip: true
 

@@ -137,7 +137,10 @@ Item {
             id: colorPickerM3
             UtilButton {
                 iconText: "colorize"
-                onClicked: Quickshell.execDetached([Directories.wallpaperSwitchScriptPath, "--noswitch", "--color"])
+                // The previous invocation ran 'switchwall.sh --noswitch --color'
+                // but switchwall.sh does not parse those as flags, so the
+                // button appeared to do nothing. Use the actual color picker.
+                onClicked: Quickshell.execDetached(["hyprpicker", "-a"])
             }
         }
         Component {
@@ -255,31 +258,6 @@ Item {
                 MaterialSymbol {
                     horizontalAlignment: Qt.AlignHCenter
                     fill: 0; text: "keyboard"
-                    iconSize: Appearance.font.pixelSize.large
-                    color: Appearance.colors.colOnLayer2
-                }
-            }
-        }
-
-        Loader {
-            active: Config.options.bar.utilButtons.showWallpaperToggle
-            visible: active
-            sourceComponent: isMaterial ? wallpaperM3 : legacyWallpaper
-        }
-        Component {
-            id: wallpaperM3
-            UtilButton {
-                iconText: "imagesmode"
-                onClicked: GlobalStates.wallpaperSelectorOpen = !GlobalStates.wallpaperSelectorOpen
-            }
-        }
-        Component {
-            id: legacyWallpaper
-            CircleUtilButton {
-                onClicked: GlobalStates.wallpaperSelectorOpen = !GlobalStates.wallpaperSelectorOpen
-                MaterialSymbol {
-                    horizontalAlignment: Qt.AlignHCenter
-                    fill: 0; text: "imagesmode"
                     iconSize: Appearance.font.pixelSize.large
                     color: Appearance.colors.colOnLayer2
                 }

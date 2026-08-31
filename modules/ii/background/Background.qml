@@ -223,30 +223,42 @@ Variants {
                 // Manual play always wins over 'manualPaused' (the button is the
                 // user's explicit override). System-level safety conditions
                 // (work-safety filter, fullscreen app) are still respected.
+                // Reset the bounded-retry counter so an explicit user action
+                // always works, even if an earlier automatic retry was capped
+                // by onErrorOccurred.
+                videoPlayer.restartAttempts = 0;
                 if (!bgRoot.wallpaperIsVideo) return;
                 if (bgRoot.hiddenForFullscreen || bgRoot.wallpaperSafetyTriggered) {
                     videoPlayer.pause();
                     return;
                 }
-                // Seek to 0 to recover from QtMultimedia's internal pause state
-                // that sometimes fails to resume cleanly after long pauses.
-                if (videoPlayer.position >= videoPlayer.duration && videoPlayer.duration > 0) {
-                    videoPlayer.position = 0;
-                }
-                videoPlayer.play();
+                // Live wallpaper playback is driven by mpvpaper (started by
+                // switchwall.sh's restore script). Control it via kill -CONT
+                // on the mpv child(ren) of mpvpaper — NOT on mpvpaper
+                // itself, because stopping mpvpaper removes the wayland
+                // surface and the wallpaper "disappears". Pausing the mpv
+                // decoder keeps the surface alive and freezes the last frame.
+                _resumeMpvpaperMpv();
+                LiveWallpaper.isPlaying = true;
             }
             function onPauseRequested() {
-                if (bgRoot.wallpaperIsVideo) videoPlayer.pause();
+                if (!bgRoot.wallpaperIsVideo) return;
+                // Freeze the live wallpaper by STOP-ing the mpv child(ren)
+                // of mpvpaper, not mpvpaper itself (see onPlayRequested).
+                _pauseMpvpaperMpv();
+                LiveWallpaper.isPlaying = false;
             }
             function onTogglePlayRequested() {
+                // Reset the retry counter so a user-driven toggle is never
+                // silently no-op'd.
+                videoPlayer.restartAttempts = 0;
                 if (!bgRoot.wallpaperIsVideo) return;
-                if (videoPlayer.playbackState === MediaPlayer.PlayingState) {
-                    videoPlayer.pause();
+                if (LiveWallpaper.isPlaying) {
+                    _pauseMpvpaperMpv();
+                    LiveWallpaper.isPlaying = false;
                 } else {
-                    if (videoPlayer.position >= videoPlayer.duration && videoPlayer.duration > 0) {
-                        videoPlayer.position = 0;
-                    }
-                    videoPlayer.play();
+                    _resumeMpvpaperMpv();
+                    LiveWallpaper.isPlaying = true;
                 }
             }
             function onToggleMuteRequested() {
@@ -281,6 +293,27 @@ Variants {
                 return path;
             }
             return "file://" + path;
+        }
+
+        // mpvpaper is a thin wayland-surface wrapper around an mpv child
+        // process. The wayland surface stays alive as long as mpvpaper runs,
+        // so we control playback by signaling the mpv child (decode pause)
+        // rather than mpvpaper itself — stopping mpvpaper stops the surface
+        // repaint loop, which the user sees as the wallpaper "disappearing".
+        // mpvpaper spawns one mpv per monitor, so we iterate over all of them.
+        function _pauseMpvpaperMpv() {
+            // Find every mpv child of every mpvpaper and STOP them. This freezes
+            // the video decoder; mpvpaper keeps the surface alive and
+            // continues to repaint the last frame, so the wallpaper "pauses"
+            // rather than disappearing.
+            Quickshell.execDetached(["bash", "-c",
+                "for p in $(pgrep -P $(pgrep -x mpvpaper) 2>/dev/null); do kill -STOP $p; done"
+            ]);
+        }
+        function _resumeMpvpaperMpv() {
+            Quickshell.execDetached(["bash", "-c",
+                "for p in $(pgrep -P $(pgrep -x mpvpaper) 2>/dev/null); do kill -CONT $p; done"
+            ]);
         }
 
         onEffectiveWallpaperPathChanged: {
@@ -381,9 +414,14 @@ Variants {
 
             MediaPlayer {
                 id: videoPlayer
-                source: bgRoot.wallpaperIsVideo && !bgRoot.wallpaperSafetyTriggered
-                    ? bgRoot.formatVideoUrl(bgRoot.effectiveWallpaperPath)
-                    : ""
+                // Live wallpaper playback is handled by mpvpaper (started by
+                // switchwall.sh's restore script). We deliberately keep the
+                // MediaPlayer source empty for video wallpapers to avoid a
+                // second decode path that, on this Fedora ffmpeg build, can
+                // pin a CPU core or grow RSS to OOM if the stream is anything
+                // the Qt ffmpeg build can't handle cleanly (the original
+                // 100% CPU / RAM root cause).
+                source: ""
                 loops: MediaPlayer.Infinite
                 audioOutput: AudioOutput {
                     id: videoAudioOutput
@@ -670,6 +708,7 @@ Variants {
                     }
                 }
                 FadeLoader {
+                    z: -1
                     shown: Config.options.background.widgets.visualizer.enable
                         && (Config.options.background.screenList.length === 0
                             || Config.options.background.screenList.includes(bgRoot.screen.name))
@@ -682,6 +721,7 @@ Variants {
                     }
                 }
                 FadeLoader {
+                    z: -1
                     shown: Config.options.background.widgets.customImage.enable
                         && (Config.options.background.screenList.length === 0
                             || Config.options.background.screenList.includes(bgRoot.screen.name))
@@ -694,6 +734,7 @@ Variants {
                     }
                 }
                 FadeLoader {
+                    z: -1
                     shown: Config.options.background.widgets.calendar.enable
                         && (Config.options.background.screenList.length === 0
                             || Config.options.background.screenList.includes(bgRoot.screen.name))
@@ -706,6 +747,7 @@ Variants {
                     }
                 }
                 FadeLoader {
+                    z: -1
                     shown: Config.options.background.widgets.weather.enable
                         && (Config.options.background.screenList.length === 0
                             || Config.options.background.screenList.includes(bgRoot.screen.name))
@@ -718,6 +760,7 @@ Variants {
                     }
                 }
                 FadeLoader {
+                    z: -1
                     shown: Config.options.background.widgets.clock.enable
                         && (GlobalStates.screenLocked
                             || Config.options.background.screenList.length === 0
@@ -732,6 +775,7 @@ Variants {
                     }
                 }
                 FadeLoader {
+                    z: -1
                     shown: Config.options.background.widgets.notes.enable
                         && (Config.options.background.screenList.length === 0
                             || Config.options.background.screenList.includes(bgRoot.screen.name))
@@ -744,6 +788,7 @@ Variants {
                     }
                 }
                 FadeLoader {
+                    z: -1
                     shown: Config.options.background.widgets.aiAgent.enable
                         && (Config.options.background.screenList.length === 0
                             || Config.options.background.screenList.includes(bgRoot.screen.name))
@@ -756,6 +801,7 @@ Variants {
                     }
                 }
                 FadeLoader {
+                    z: -1
                     id: mediaLoader
                     property bool enableLoading: true
                     shown: Config.options.background.widgets.media.enable && enableLoading
@@ -778,6 +824,7 @@ Variants {
                     }
                 }
                 FadeLoader {
+                    z: -1
                     shown: Config.options.background.widgets.images.enable
                         && (Config.options.background.screenList.length === 0
                             || Config.options.background.screenList.includes(bgRoot.screen.name))
@@ -790,6 +837,7 @@ Variants {
                     }
                 }
                 FadeLoader {
+                    z: -1
                     shown: Config.options.background.widgets.resources.enable
                         && (Config.options.background.screenList.length === 0
                             || Config.options.background.screenList.includes(bgRoot.screen.name))
@@ -802,6 +850,7 @@ Variants {
                     }
                 }
                 FadeLoader {
+                    z: -1
                     shown: Config.options.background.widgets.worldClock.enable
                         && (Config.options.background.screenList.length === 0
                             || Config.options.background.screenList.includes(bgRoot.screen.name))
@@ -814,6 +863,7 @@ Variants {
                     }
                 }
                 FadeLoader {
+                    z: -1
                     shown: Config.options.background.widgets.userCard.enable
                         && (Config.options.background.screenList.length === 0
                             || Config.options.background.screenList.includes(bgRoot.screen.name))
@@ -826,6 +876,7 @@ Variants {
                     }
                 }
                 FadeLoader {
+                    z: -1
                     shown: Config.options.background.widgets.todo.enable
                         && (Config.options.background.screenList.length === 0
                             || Config.options.background.screenList.includes(bgRoot.screen.name))
@@ -838,6 +889,7 @@ Variants {
                     }
                 }
                 FadeLoader {
+                    z: -1
                     shown: Config.options.background.widgets.timers.enable
                         && (Config.options.background.screenList.length === 0
                             || Config.options.background.screenList.includes(bgRoot.screen.name))
@@ -850,6 +902,7 @@ Variants {
                     }
                 }
                 FadeLoader {
+                    z: -1
                     shown: (Config.options.background.widgets.translator?.enable ?? false)
                         && (Config.options.background.screenList.length === 0
                             || Config.options.background.screenList.includes(bgRoot.screen.name))
